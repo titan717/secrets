@@ -7,17 +7,20 @@ Using `github.com/titan717/secrets` (exact name match, was empty) as the monorep
 
 ## Done
 - Cycle 0: tooling check (docs/AGENT-RUNTIME.md), scaffold, CI, PRD, UX references, assets.
+- T-0001 crypto choice: vodozemac Olm/Megolm (@kinsh/vodozemac-wasm, -rn) + libsodium; LiveKit E2EE for calls; PGlite for tests. Node PoC in docs/research/crypto-poc.
 
 ## In progress (Cycle 1)
 | ID | Owner | Goal |
 |---|---|---|
-| T-0001 | researcher | Verify E2EE library choice (libsignal vs MLS), licenses, browser/RN support → docs/research/crypto-choice.md |
+| T-0005 | builder_crypto | packages/crypto: Olm sessions, fan-out, attachments, encrypted storage, safety numbers, Megolm prep |
+| T-0007 | security_critic | Threat model, review of T-0001, review checklist |
 | T-0002 | builder_backend | apps/api: Fastify + Postgres + auth (username, password/Argon2id), devices, opaque key bundles, rate limits |
 | T-0003 | builder_platform | packages/tokens + packages/ui: design tokens (4 themes), core components |
 | T-0004 | builder_web | apps/web: shell, routing, signup/onboarding, three-panel Messages UI on mocks |
 
 ## Next
-- T-0005 client crypto package (after T-0001), envelope fan-out per device, WebSocket delivery, offline queue, receipts.
+- Wire web client to api + crypto: WebSocket delivery, offline queue, receipts.
+- Fork @kinsh vodozemac bindings to titan717 and build in CI before beta (supply-chain condition).
 - T-0006 media attachments (client-encrypted, S3 presigned), abuse controls (block, report, rate limits, message requests).
 - P1 gate: QA acceptance matrix + security-critic sign-off.
 
