@@ -23,7 +23,7 @@ Privacy-first, end-to-end encrypted, all-in-one app: Messages, Calls, Docks, Mom
 ## Develop
 ```bash
 pnpm install
-pnpm ci        # typecheck + lint + test
+pnpm check     # typecheck + lint + test
 ```
 
 ## Security model (short)
