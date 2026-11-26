@@ -1,0 +1,14 @@
+@secrets/vodozemac-wasm
+Copyright 2026 The Secrets authors.
+
+This package contains source code vendored from vodozemac-bindings
+  https://github.com/Meneleus/vodozemac-bindings
+  commit 42e4e0c0962adb2c0ff68ff1c9b11ea1601ad531 (tag v0.4.2, published as @kinsh/vodozemac-wasm@0.4.2)
+  Authors per upstream git history: Vadim Filimonov (dTelecom, original
+  https://github.com/dTelecom/vodozemac-wasm) and Elis Pomales (Megolm surface).
+Licensed under the Apache License, Version 2.0 (see LICENSE, copied unmodified from upstream).
+
+It links vodozemac (https://github.com/matrix-org/vodozemac), Apache-2.0,
+Copyright The Matrix.org Foundation C.I.C.
+
+Modifications by Secrets are listed in UPSTREAM.md.

@@ -1,0 +1,69 @@
+name: wasm
+# Hermetic build of packages/vodozemac-wasm (security review T-0001, conditions C1/C2).
+# Pinned: rustc via rust-toolchain.toml, crates via Cargo.lock (--locked), wasm-bindgen CLI
+# by version + SHA-256, all actions by commit SHA. No caches. Built twice in different
+# directories; both outputs must match the committed pkg.sha256.
+on:
+  push:
+    branches: [main, "chore/vodozemac-vendor"]
+    paths: ["packages/vodozemac-wasm/**", ".github/workflows/wasm.yml"]
+  pull_request:
+    paths: ["packages/vodozemac-wasm/**", ".github/workflows/wasm.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: wasm-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: packages/vodozemac-wasm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 20
+      - name: Toolchain from rust-toolchain.toml (preinstalled rustup)
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustc -Vv
+          cargo -V
+      - name: Install wasm-bindgen CLI (pinned + SHA-256 verified)
+        run: |
+          tools/install-wasm-bindgen.sh "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Build 1
+        run: tools/build.sh
+      - name: Smoke tests + Megolm v1 test vectors
+        run: node scripts/smoke.mjs && node scripts/verify-test-vectors.mjs
+      - name: Build 2 (fresh copy, different directory, clean target)
+        run: |
+          dir="$RUNNER_TEMP/rebuild/x/y"
+          mkdir -p "$dir"
+          cp -r Cargo.toml Cargo.lock rust-toolchain.toml src tools "$dir/"
+          (cd "$dir" && tools/build.sh)
+          cp "$dir/pkg.sha256.actual" pkg.sha256.rebuild
+      - name: Reproducibility check against committed pkg.sha256
+        run: |
+          diff -u pkg.sha256.actual pkg.sha256.rebuild
+          diff -u pkg.sha256 pkg.sha256.actual || { echo "::error::wasm output differs from committed pkg.sha256"; exit 1; }
+          echo "### vodozemac-wasm artifact" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"; cat pkg.sha256.actual >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vodozemac-wasm-pkg
+          path: |
+            packages/vodozemac-wasm/pkg-web
+            packages/vodozemac-wasm/pkg-node
+            packages/vodozemac-wasm/pkg.sha256.actual
+          if-no-files-found: error
+          retention-days: 30

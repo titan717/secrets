@@ -1,0 +1,39 @@
+# Vendored from https://github.com/Meneleus/vodozemac-bindings @ 42e4e0c0962adb2c0ff68ff1c9b11ea1601ad531
+# (tag v0.4.2, Apache-2.0). See UPSTREAM.md for the diff against upstream.
+[package]
+name = "secrets-vodozemac-wasm"
+version = "0.5.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+description = "Browser/Node WASM bindings for vodozemac (Olm + Megolm). Vendored glue from @kinsh/vodozemac-wasm."
+repository = "https://github.com/titan717/secrets"
+rust-version = "1.89"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+# >= 0.11.2 fixes GHSA-pqp6-f7wc-6498, GHSA-mxcm-mrw6-c446, GHSA-v27v-f96q-qhjq
+vodozemac = "=0.11.2"
+wasm-bindgen = "=0.2.130"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# `js` feature routes randomness through the Web Crypto API (crypto.getRandomValues).
+# vodozemac 0.11 uses getrandom 0.4; "wasm_js" routes it to crypto.getRandomValues.
+# (upstream had getrandom 0.2 + "js" for vodozemac 0.10; no longer in the tree.)
+getrandom = { version = "=0.4.3", features = ["wasm_js"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = "debuginfo"
+
+# wasm-opt (binaryen) is downloaded unpinned by wasm-pack; disable it so the
+# output depends only on rustc + wasm-bindgen, which are both pinned.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
