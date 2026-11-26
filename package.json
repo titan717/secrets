@@ -1,0 +1,15 @@
+{
+  "name": "secrets",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Secrets — Your world. Your people. Your space. Privacy-first E2EE all-in-one app.",
+  "packageManager": "pnpm@9.15.9",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "ci": "pnpm typecheck && pnpm lint && pnpm test"
+  }
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.vite/
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+src-tauri/target/
+.expo/
+playwright-report/
+test-results/
