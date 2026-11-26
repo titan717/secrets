@@ -17,5 +17,9 @@ WASM=target/wasm32-unknown-unknown/release/secrets_vodozemac_wasm.wasm
 rm -rf pkg-web pkg-node
 wasm-bindgen --target web    --out-dir pkg-web  "$WASM"
 wasm-bindgen --target nodejs --out-dir pkg-node "$WASM"
+# The root package.json is "type": "module"; mark the CommonJS node build explicitly
+# (wasm-pack used to do this). Static content, so it stays reproducible.
+printf '{ "type": "commonjs" }\n' > pkg-node/package.json
+printf '{ "type": "module" }\n' > pkg-web/package.json
 node tools/hash-pkg.mjs > pkg.sha256.actual
 cat pkg.sha256.actual
