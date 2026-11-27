@@ -1,0 +1,98 @@
+/* Secrets design tokens — one system, three themes. */
+:root {
+  --font-body: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: clamp(1.9rem, 1.4rem + 2vw, 2.75rem);
+  --text-hero: clamp(2.4rem, 1.6rem + 3.6vw, 4.25rem);
+
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 24px; --r-pill: 999px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 120ms; --t-med: 220ms; --t-slow: 380ms;
+
+  --accent: #a855f7;
+  --accent-2: #6d28d9;
+  --accent-fill: linear-gradient(135deg, var(--accent), var(--accent-2));
+  --on-accent: #fff;
+
+  --danger: #f43f5e;
+  --success: #22c55e;
+  --warning: #f59e0b;
+
+  --sidebar-w: 232px;
+  --list-w: 340px;
+  --info-w: 320px;
+  --header-h: 64px;
+  --bottom-nav-h: 64px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0a10;
+  --surface-0: #0e0d14;
+  --surface-1: #13121b;
+  --surface-2: #1a1824;
+  --surface-3: #23202f;
+  --surface-4: #2d2a3b;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text: #f2f0f7;
+  --text-2: #b4afc4;
+  --text-3: #7d778f;
+  --bubble-in: #1f1c2a;
+  --shadow-lg: 0 24px 60px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border);
+  --shadow-md: 0 10px 30px -10px rgba(0, 0, 0, 0.55);
+  --glow: 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent), 0 8px 28px -6px color-mix(in oklab, var(--accent) 55%, transparent);
+  --scrim: rgba(5, 4, 9, 0.62);
+}
+
+:root[data-theme="black"] {
+  color-scheme: dark;
+  --bg: #000;
+  --surface-0: #000;
+  --surface-1: #050507;
+  --surface-2: #0f0e14;
+  --surface-3: #17151f;
+  --surface-4: #211e2b;
+  --border: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #f5f3fa;
+  --text-2: #aea9bd;
+  --text-3: #75707f;
+  --bubble-in: #141219;
+  --shadow-lg: 0 24px 60px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--border);
+  --shadow-md: 0 10px 30px -10px rgba(0, 0, 0, 0.9);
+  --glow: 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent), 0 8px 28px -6px color-mix(in oklab, var(--accent) 55%, transparent);
+  --scrim: rgba(0, 0, 0, 0.72);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f2f9;
+  --surface-0: #f7f6fb;
+  --surface-1: #ffffff;
+  --surface-2: #f1eff7;
+  --surface-3: #e8e5f1;
+  --surface-4: #dcd8e8;
+  --border: rgba(25, 18, 48, 0.08);
+  --border-strong: rgba(25, 18, 48, 0.15);
+  --text: #17141f;
+  --text-2: #565066;
+  --text-3: #8a8499;
+  --bubble-in: #ffffff;
+  --shadow-lg: 0 24px 60px -16px rgba(40, 20, 80, 0.22), 0 0 0 1px var(--border);
+  --shadow-md: 0 10px 30px -12px rgba(40, 20, 80, 0.2);
+  --glow: 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent), 0 8px 24px -8px color-mix(in oklab, var(--accent) 45%, transparent);
+  --scrim: rgba(23, 20, 31, 0.36);
+}

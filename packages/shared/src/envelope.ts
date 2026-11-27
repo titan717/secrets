@@ -1,0 +1,47 @@
+/**
+ * Message envelope — the ONLY shape messages travel in (DB, REST, WebSocket).
+ *
+ * PROTOTYPE: `ciphertext` holds plaintext JSON (see MessageBody) and `nonce` is null.
+ * E2EE later replaces sealBody/openBody in this module only; nothing else may
+ * read or write `ciphertext` directly.
+ */
+export interface MessageEnvelope {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  device_id: string;
+  ciphertext: string;
+  nonce: string | null;
+  created_at: string; // ISO 8601
+  client_msg_id: string;
+}
+
+/** Decrypted message payload. */
+export interface MessageBody {
+  text?: string;
+  reply_to?: string | null; // message id
+  attachments?: Attachment[];
+  kind?: "text" | "system";
+}
+
+export interface Attachment {
+  id: string;
+  url: string; // relative to API base, e.g. /v1/attachments/:id
+  mime: string;
+  width?: number;
+  height?: number;
+  size: number;
+  name?: string;
+}
+
+export function sealBody(body: MessageBody): { ciphertext: string; nonce: string | null } {
+  return { ciphertext: JSON.stringify(body), nonce: null };
+}
+
+export function openBody(env: Pick<MessageEnvelope, "ciphertext" | "nonce">): MessageBody {
+  try {
+    return JSON.parse(env.ciphertext) as MessageBody;
+  } catch {
+    return { text: env.ciphertext };
+  }
+}

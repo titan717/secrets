@@ -1,0 +1,19 @@
+{
+  "name": "secrets",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Secrets — Your world. Your people. Your space. Privacy-first communication platform.",
+  "packageManager": "pnpm@12.22.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "pnpm --filter @secrets/api --filter @secrets/web --parallel dev",
+    "dev:api": "pnpm --filter @secrets/api dev",
+    "dev:web": "pnpm --filter @secrets/web dev",
+    "build": "pnpm --filter @secrets/web build && pnpm --filter @secrets/api build",
+    "build:services": "pnpm --filter @secrets/ai build && pnpm --filter @secrets/calls build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "check": "pnpm typecheck && pnpm test && pnpm build"
+  }
+}

@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: secrets, POSTGRES_PASSWORD: secrets, POSTGRES_DB: secrets_test }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U secrets" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+    env:
+      CI: "true"
+      DATABASE_URL: postgres://secrets:secrets@localhost:5432/secrets_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm build:services
+      - name: API smoke test
+        run: |
+          node apps/api/dist/index.js & API_PID=$!
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8080/health && break || sleep 1
+          done
+          curl -sf http://127.0.0.1:8080/health
+          kill $API_PID
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }

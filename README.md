@@ -1,48 +1,56 @@
+<p align="center"><img src="assets/logo-mark-512.png" width="96" alt="Secrets logo"></p>
+
 # Secrets
 
-Privacy-first, all-in-one communication platform. MVP pillars: **Messaging, Docks, Calls, AI**.
+**Your world. Your people. Your space.**
 
-This repository is the consolidated monorepo. It supersedes the split prototype repos
-(`api.secrets`, `ai.secrets`, `voice.secretsapi`, `docs.secrets`, `secrets`).
+Privacy-first, all-in-one communication platform. MVP pillars: **Messaging, Docks, Calls, AI** —
+dark-first, username-first, free-first, for desktop and mobile web.
 
-## Status
+> Status: Phase 1 complete (consolidation, tests, CI, flags). Phase 2 next: auth hardening.
+> See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
-**Phase 0 — architecture & approval.** No application code has been written in this repo yet.
-The audit, architecture, schema, API contract, security plan and roadmap live in `docs/`
-and are pending owner approval.
+This repository is the consolidated monorepo. It absorbs the split prototype repos
+(`api.secrets`, `ai.secrets`, `voice.secretsapi`, `docs.secrets`).
 
-See [`IMPLEMENTATION_STATUS.md`](./IMPLEMENTATION_STATUS.md).
+## Repo layout
 
-## Layout (target)
+| Path | What |
+|---|---|
+| `apps/web` | Web client (React 18 + Vite, `packages/ui` design system) |
+| `apps/api` | Core API: auth, users, conversations, messages, Docks, attachments, realtime |
+| `apps/ai` | AI assistant: Gemini/OpenRouter adapters, SSE streaming, agent loop, tool approvals |
+| `apps/calls` | LiveKit token issuance and call coordination |
+| `packages/shared` | Wire contracts: REST DTOs, WS frames, AI SSE, calls, message envelope |
+| `packages/ui` | Shared UI kit |
+| `packages/tokens` | Design tokens (dark, black, light, system), contrast-tested |
+| `packages/config` | Shared TypeScript / lint / build presets |
+| `docs/product` | Scope and roadmap |
+| `docs/engineering` | Audit, architecture, data model, API contract, schema |
+| `docs/security` | Threat model and security plan |
+| `docs/adr` | Architecture decision records |
 
-```
-secrets/
-  apps/
-    web/          React + Vite client (design system from packages/ui)
-    api/          Fastify 5: auth, users, conversations, messages, docks, attachments, realtime
-    ai/           AI assistant service: provider adapters, agent loop, tool approvals
-    calls/        LiveKit token issuance + call coordination
-  packages/
-    shared/       Contracts: REST DTOs, WS frames, AI SSE, call payloads, envelope
-    ui/           Design system components
-    tokens/       Design tokens (color/scale/theme), contrast-tested
-    config/       Shared tsconfig / lint / build presets
-  infra/
-    docker/       Dockerfiles, compose
-    scripts/      ops + smoke scripts
-  docs/
-    product/      scope, roadmap
-    engineering/  audit, architecture, data model, API contract
-    security/     threat model, security plan
-    adr/          decision records
-```
-
-## Quick start (target, after Phase 1)
+## Develop
 
 ```bash
 pnpm install --allow-build=esbuild
-pnpm dev            # api :8080 (PGlite) + web :5173
+pnpm dev        # api :8080 (embedded PGlite) + web :5173
+pnpm check      # typecheck + lint + test + build
 ```
 
-Local development needs **no Postgres and no Redis**: the API boots embedded Postgres
-(PGlite) and an in-process event bus. Production sets `DATABASE_URL` / `REDIS_URL`.
+Local development needs **no Postgres and no Redis**: the API boots embedded Postgres (PGlite) and an
+in-process event bus. Production sets `DATABASE_URL` / `REDIS_URL` and uses object storage.
+
+## Security model (short)
+
+MVP is **not** end-to-end encrypted and does not claim to be. Transport is TLS; every request is
+authorized server-side; sessions live in httpOnly cookies; provider keys are bring-your-own and never
+stored on the server. The message envelope (`body` / `ciphertext` + `nonce`) already isolates content so
+E2EE can be added later without an API break. See [docs/security/SECURITY-PLAN.md](docs/security/SECURITY-PLAN.md).
+
+## Documentation
+
+- [Audit](docs/engineering/AUDIT.md) · [Architecture](docs/engineering/ARCHITECTURE.md) ·
+  [Data model](docs/engineering/DATA-MODEL.md) · [API contract](docs/engineering/API-CONTRACT.md)
+- [Security plan](docs/security/SECURITY-PLAN.md) · [Roadmap](docs/product/ROADMAP.md)
+- [Status](IMPLEMENTATION_STATUS.md)
