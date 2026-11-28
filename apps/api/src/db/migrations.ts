@@ -289,6 +289,56 @@ CREATE TABLE IF NOT EXISTS blocks (
 );
 `,
   },
+  {
+    id: "009_messaging_hardening",
+    sql: `
+ALTER TABLE attachments ALTER COLUMN data DROP NOT NULL;
+ALTER TABLE attachments ADD COLUMN IF NOT EXISTS storage_key text;
+ALTER TABLE attachments ADD COLUMN IF NOT EXISTS storage_kind text NOT NULL DEFAULT 'db';
+ALTER TABLE attachments ADD COLUMN IF NOT EXISTS sha256 text;
+ALTER TABLE attachments ADD COLUMN IF NOT EXISTS thumbnail_key text;
+ALTER TABLE attachments ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'ready';
+CREATE INDEX IF NOT EXISTS attachments_pending_idx ON attachments (created_at) WHERE status = 'pending';
+CREATE TABLE IF NOT EXISTS object_blobs (
+  key text PRIMARY KEY,
+  data bytea NOT NULL,
+  content_type text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS message_hides (
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  message_id uuid NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, message_id)
+);
+CREATE TABLE IF NOT EXISTS message_receipts (
+  message_id uuid NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  delivered_at timestamptz,
+  read_at timestamptz,
+  PRIMARY KEY (message_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS receipts_user_pending_idx ON message_receipts (user_id) WHERE delivered_at IS NULL;
+ALTER TABLE conversation_members ADD COLUMN IF NOT EXISTS notification_level text NOT NULL DEFAULT 'all';
+ALTER TABLE conversation_members ADD COLUMN IF NOT EXISTS muted_until timestamptz;
+ALTER TABLE dock_members ADD COLUMN IF NOT EXISTS notification_level text NOT NULL DEFAULT 'all';
+ALTER TABLE dock_members ADD COLUMN IF NOT EXISTS muted_until timestamptz;
+CREATE TABLE IF NOT EXISTS notifications (
+  id uuid PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind text NOT NULL DEFAULT 'message',
+  conversation_id uuid REFERENCES conversations(id) ON DELETE CASCADE,
+  message_id uuid REFERENCES messages(id) ON DELETE CASCADE,
+  actor_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  preview text NOT NULL DEFAULT '',
+  read_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notifications_unread_idx ON notifications (user_id, created_at DESC) WHERE read_at IS NULL;
+CREATE INDEX IF NOT EXISTS blocks_blocked_idx ON blocks (blocked_id);
+`,
+  },
 ];
 
 export async function migrate(db: Db, log: (m: string) => void): Promise<void> {

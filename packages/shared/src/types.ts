@@ -35,6 +35,8 @@ export interface Conversation {
   members: User[]; // for dm/group; channels may return [] (use dock members)
   last_message: MessageView | null;
   unread_count: number;
+  notification_level?: NotificationLevel;
+  muted_until?: string | null;
   created_at: string;
 }
 
@@ -57,6 +59,38 @@ export interface MessageView {
   edited_at?: string | null;
   deleted?: boolean;
   pinned?: boolean;
+  /** Per-recipient delivery/read counts for the sender's own messages. */
+  delivered_count?: number;
+  read_count?: number;
+}
+
+export type NotificationLevel = "all" | "mentions" | "none";
+
+export interface Notification {
+  id: ID;
+  kind: "message" | "mention" | "call" | "system";
+  conversation_id: ID | null;
+  message_id: ID | null;
+  actor: User | null;
+  preview: string;
+  read_at: string | null;
+  created_at: string;
+  conversation_title?: string | null;
+}
+
+export interface MessageReceipt {
+  user_id: ID;
+  user: User | null;
+  delivered_at: string | null;
+  read_at: string | null;
+}
+
+export interface SearchResults {
+  query: string;
+  messages: { message: MessageView; conversation: { id: ID; kind: ConversationKind; title: string | null } }[];
+  users: User[];
+  conversations: Conversation[];
+  docks: Dock[];
 }
 
 export type DockVisibility = "public" | "private";

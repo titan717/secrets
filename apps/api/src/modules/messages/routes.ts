@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { requireAuth } from "../auth/service.js";
-import { sendMessage, listMessages, react, editMessage, deleteMessage, visibleMessage, setPin, listPins, searchMessages } from "./service.js";
+import { sendMessage, listMessages, react, editMessage, deleteMessage, hideMessage, visibleMessage, setPin, listPins, searchMessages, messageReceipts } from "./service.js";
+import { markDelivered } from "../moderation/service.js";
 import { messageViews } from "../../lib/views.js";
 
 export async function messageRoutes(app: FastifyInstance) {
@@ -35,14 +36,27 @@ export async function messageRoutes(app: FastifyInstance) {
   // Extra: edit (sender only). Body { ciphertext, nonce }.
   app.patch("/v1/messages/:id", async (req) => editMessage(req.auth.id, (req.params as any).id, (req.body ?? {}) as any));
 
-  // Extra: soft delete (sender, or group owner / dock admin). Returns the tombstone.
-  app.delete("/v1/messages/:id", async (req) => deleteMessage(req.auth.id, (req.params as any).id));
+  // Soft delete for everyone (sender, or group owner / dock admin). `?scope=me` hides it only for the caller.
+  app.delete("/v1/messages/:id", async (req) => {
+    if (String((req.query as any)?.scope ?? "") === "me") return hideMessage(req.auth.id, (req.params as any).id);
+    return deleteMessage(req.auth.id, (req.params as any).id);
+  });
+
+  // Per-recipient delivered/read state (dm/group).
+  app.get("/v1/messages/:id/receipts", async (req) => messageReceipts(req.auth.id, (req.params as any).id));
 
   app.post("/v1/messages/:id/reactions", async (req) => react(req.auth.id, (req.params as any).id, (req.body as any)?.emoji, true));
 
   app.delete("/v1/messages/:id/reactions/:emoji", async (req) => {
     const p = req.params as any;
     return react(req.auth.id, p.id, p.emoji, false);
+  });
+
+  // Delivery acknowledgement (REST fallback when the socket is unavailable).
+  app.post("/v1/conversations/:id/delivered", async (req) => {
+    const b = (req.body ?? {}) as any;
+    await markDelivered(req.auth.id, String((req.params as any).id), typeof b.message_id === "string" ? b.message_id : null);
+    return { ok: true as const };
   });
 
   app.post("/v1/messages/:id/pin", async (req) => setPin(req.auth.id, (req.params as any).id, true));

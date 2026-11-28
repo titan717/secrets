@@ -6,6 +6,7 @@ import { requireAuth, assertEmailVerified } from "../auth/service.js";
 import { publish, conversationAudience } from "../realtime/bus.js";
 import { access, memberIds, pushConversation } from "./service.js";
 import { markRead } from "../messages/service.js";
+import { assertNotBlocked } from "../moderation/service.js";
 
 const MAX_GROUP = 256;
 
@@ -51,6 +52,7 @@ export async function conversationRoutes(app: FastifyInstance) {
     if (!isUuid(other)) throw badRequest("user_id is required");
     if (other === req.auth.id) throw badRequest("You can't start a DM with yourself");
     if (!(await existingUsers([other])).length) throw notFound("User not found");
+    await assertNotBlocked(req.auth.id, other);
     const key = [req.auth.id, other].sort().join(":");
     let conv = await db.one(`SELECT id FROM conversations WHERE dm_key = $1`, [key]);
     let created = false;
@@ -82,6 +84,7 @@ export async function conversationRoutes(app: FastifyInstance) {
     const requested = ids(b.member_ids ?? [], "member_ids").filter((x) => x !== req.auth.id);
     const members = await existingUsers(requested);
     if (members.length + 1 > MAX_GROUP) throw badRequest(`Groups can have at most ${MAX_GROUP} members`);
+    for (const m of members) await assertNotBlocked(req.auth.id, m);
     const id = uuid();
     await db.tx(async (q) => {
       await q.query(`INSERT INTO conversations (id, kind, title, created_by) VALUES ($1, 'group', $2, $3)`, [id, title, req.auth.id]);
@@ -122,6 +125,7 @@ export async function conversationRoutes(app: FastifyInstance) {
     const current = new Set(await memberIds(a.conv.id));
     const toAdd = requested.filter((u) => !current.has(u));
     if (current.size + toAdd.length > MAX_GROUP) throw badRequest(`Groups can have at most ${MAX_GROUP} members`);
+    for (const u of toAdd) await assertNotBlocked(req.auth.id, u);
     for (const u of toAdd)
       await db.query(`INSERT INTO conversation_members (conversation_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [a.conv.id, u]);
     if (toAdd.length) await pushConversation(a.conv.id, [...current, ...toAdd].filter((u) => u !== req.auth.id));

@@ -28,7 +28,7 @@ export function selfView(r: any): User {
 export const MSG_COLS =
   "m.id, m.seq, m.conversation_id, m.sender_id, m.device_id, m.ciphertext, m.nonce, m.client_msg_id, m.created_at, m.edited_at, m.deleted_at";
 
-function rawMessageView(r: any, reactions: Reaction[], pinned: boolean): MessageView {
+function rawMessageView(r: any, reactions: Reaction[], pinned: boolean, counts?: { delivered: number; read: number }): MessageView {
   const v: MessageView = {
     id: r.id,
     conversation_id: r.conversation_id,
@@ -42,6 +42,8 @@ function rawMessageView(r: any, reactions: Reaction[], pinned: boolean): Message
     edited_at: r.edited_at ? iso(r.edited_at) : null,
     deleted: !!r.deleted_at,
     pinned,
+    delivered_count: counts?.delivered ?? 0,
+    read_count: counts?.read ?? 0,
   };
   return v;
 }
@@ -57,6 +59,14 @@ export async function messageViews(rows: any[], q: Queryable = db): Promise<Mess
   const pins = new Set(
     (await q.query<{ message_id: string }>(`SELECT message_id FROM pins WHERE message_id = ANY($1::uuid[])`, [ids])).map((r) => r.message_id),
   );
+  const receiptRows = await q.query<{ message_id: string; delivered: number; read: number }>(
+    `SELECT message_id,
+       COUNT(*) FILTER (WHERE delivered_at IS NOT NULL)::int AS delivered,
+       COUNT(*) FILTER (WHERE read_at IS NOT NULL)::int AS read
+     FROM message_receipts WHERE message_id = ANY($1::uuid[]) GROUP BY message_id`,
+    [ids],
+  );
+  const receiptsBy = new Map(receiptRows.map((r) => [r.message_id, { delivered: Number(r.delivered), read: Number(r.read) }]));
   const byMsg = new Map<string, Map<string, string[]>>();
   for (const r of rx) {
     let m = byMsg.get(r.message_id);
@@ -70,6 +80,7 @@ export async function messageViews(rows: any[], q: Queryable = db): Promise<Mess
       r,
       [...(byMsg.get(r.id) ?? new Map<string, string[]>()).entries()].map(([emoji, user_ids]) => ({ emoji, user_ids })),
       pins.has(r.id),
+      receiptsBy.get(r.id),
     ),
   );
 }
@@ -84,7 +95,7 @@ export async function messageViewById(id: string, q: Queryable = db): Promise<Me
 export async function conversationViews(convRows: any[], viewerId: string, q: Queryable = db): Promise<Conversation[]> {
   if (!convRows.length) return [];
   const ids = convRows.map((c) => c.id);
-  const [members, lasts, unread] = await Promise.all([
+  const [members, lasts, unread, prefs] = await Promise.all([
     q.query(
       `SELECT cm.conversation_id, ${USER_COLS} FROM conversation_members cm JOIN users u ON u.id = cm.user_id
        WHERE cm.conversation_id = ANY($1::uuid[]) ORDER BY cm.joined_at ASC`,
@@ -92,22 +103,38 @@ export async function conversationViews(convRows: any[], viewerId: string, q: Qu
     ),
     q.query(
       `SELECT ${MSG_COLS} FROM conversations c
-       JOIN LATERAL (SELECT * FROM messages mm WHERE mm.conversation_id = c.id ORDER BY mm.seq DESC LIMIT 1) m ON true
+       JOIN LATERAL (
+         SELECT * FROM messages mm
+         WHERE mm.conversation_id = c.id
+           AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $2 AND h.message_id = mm.id)
+         ORDER BY mm.seq DESC LIMIT 1
+       ) m ON true
        WHERE c.id = ANY($1::uuid[])`,
-      [ids],
+      [ids, viewerId],
     ),
     q.query(
       `SELECT m.conversation_id, COUNT(*)::int AS n FROM messages m
        LEFT JOIN read_state rs ON rs.conversation_id = m.conversation_id AND rs.user_id = $2
        WHERE m.conversation_id = ANY($1::uuid[]) AND m.sender_id <> $2 AND m.deleted_at IS NULL
          AND m.seq > COALESCE(rs.last_read_seq, 0)
+         AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $2 AND h.message_id = m.id)
        GROUP BY m.conversation_id`,
+      [ids, viewerId],
+    ),
+    q.query(
+      `SELECT cm.conversation_id, cm.notification_level, cm.muted_until
+       FROM conversation_members cm WHERE cm.conversation_id = ANY($1::uuid[]) AND cm.user_id = $2
+       UNION ALL
+       SELECT c.id AS conversation_id, dm.notification_level, dm.muted_until
+       FROM conversations c JOIN dock_members dm ON dm.dock_id = c.dock_id AND dm.user_id = $2
+       WHERE c.id = ANY($1::uuid[]) AND c.kind = 'channel'`,
       [ids, viewerId],
     ),
   ]);
   const lastViews = await messageViews(lasts, q);
   const lastBy = new Map(lastViews.map((m) => [m.conversation_id, m]));
   const unreadBy = new Map(unread.map((r: any) => [r.conversation_id, Number(r.n)]));
+  const prefBy = new Map(prefs.map((r: any) => [r.conversation_id, r]));
   const membersBy = new Map<string, User[]>();
   for (const m of members) {
     const list = membersBy.get(m.conversation_id) ?? [];
@@ -123,6 +150,8 @@ export async function conversationViews(convRows: any[], viewerId: string, q: Qu
     members: membersBy.get(c.id) ?? [],
     last_message: lastBy.get(c.id) ?? null,
     unread_count: unreadBy.get(c.id) ?? 0,
+    notification_level: prefBy.get(c.id)?.notification_level ?? "all",
+    muted_until: prefBy.get(c.id)?.muted_until ? iso(prefBy.get(c.id).muted_until) : null,
     created_at: iso(c.created_at),
   }));
 }
@@ -187,5 +216,6 @@ export function attachmentView(r: any): Attachment {
   if (r.width) a.width = Number(r.width);
   if (r.height) a.height = Number(r.height);
   if (r.name) a.name = r.name;
+  if (r.thumbnail_key) a.thumbnail_url = `/v1/attachments/${r.id}?variant=thumb`;
   return a;
 }

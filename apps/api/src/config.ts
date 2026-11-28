@@ -19,7 +19,8 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
   pgliteDir: env.PGLITE_DIR ?? path.resolve(process.cwd(), "data/pglite"),
-  maxUploadBytes: 8 * 1024 * 1024,
+  maxUploadBytes: Number(env.MAX_UPLOAD_BYTES ?? 25 * 1024 * 1024),
+  maxImageBytes: Number(env.MAX_IMAGE_BYTES ?? 8 * 1024 * 1024),
   webDist: env.WEB_DIST ?? null,
   logLevel: env.LOG_LEVEL ?? (env.NODE_ENV === "production" ? "info" : "info"),
   features: flagsFromEnv(env),
@@ -34,4 +35,14 @@ export const config = {
     resendKey: env.RESEND_API_KEY?.trim() || null,
   },
   ipPepper: env.IP_HASH_PEPPER?.trim() || "secrets-dev-ip-pepper",
+  storage: {
+    kind: env.S3_BUCKET?.trim() ? ("s3" as const) : ("db" as const),
+    endpoint: env.S3_ENDPOINT?.trim() || null,
+    region: env.S3_REGION?.trim() || "auto",
+    bucket: env.S3_BUCKET?.trim() || null,
+    accessKeyId: env.S3_ACCESS_KEY_ID?.trim() || null,
+    secretAccessKey: env.S3_SECRET_ACCESS_KEY?.trim() || null,
+    forcePathStyle: env.S3_FORCE_PATH_STYLE !== "0",
+    publicBaseUrl: env.S3_PUBLIC_BASE_URL?.trim() || null,
+  },
 };

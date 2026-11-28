@@ -4,6 +4,7 @@ import { badRequest, forbidden, notFound, uuid, isUuid, assertId } from "../../l
 import { MSG_COLS, messageViews, messageViewById } from "../../lib/views.js";
 import { publish, conversationAudience } from "../realtime/bus.js";
 import { access, memberIds } from "../conversations/service.js";
+import { notifyMessage, createReceipts, markReadReceipts, markDelivered, markConversationNotificationsRead, assertNotBlocked, receiptsForMessage } from "../moderation/service.js";
 import { sendLimit } from "../../lib/rate.js";
 
 const MAX_CIPHERTEXT = 64 * 1024;
@@ -52,6 +53,10 @@ export async function sendMessage(
   if (!opts.system) sendLimit(senderId);
   const a = await access(conversationId, senderId, "write");
   if (!opts.system) assertCanPost(a);
+  if (a.conv.kind === "dm") {
+    const others = (await memberIds(a.conv.id)).filter((u) => u !== senderId);
+    if (others[0]) await assertNotBlocked(senderId, others[0]);
+  }
   const body = opts.system ? openBody({ ciphertext: String(input.ciphertext), nonce: null }) : validateEnvelope(input);
   const clientMsgId = input.client_msg_id as string;
 
@@ -92,9 +97,19 @@ export async function sendMessage(
   );
   const message = (await messageViews([row]))[0];
   const audience = await conversationAudience(a.conv.id);
+  if (a.conv.kind !== "channel") await createReceipts(message.id, audience.filter((u) => u !== senderId)).catch(() => {});
   // Sender's other devices get msg.new too; the sending device gets msg.ack.
   publish(audience.filter((u) => u !== senderId), { t: "msg.new", message });
   publish([senderId], { t: "msg.new", message }, deviceId);
+  await notifyMessage({
+    conversationId: a.conv.id,
+    kind: a.conv.kind,
+    dockId: a.conv.dock_id ?? null,
+    messageId: message.id,
+    senderId,
+    text: body.text ?? "",
+    hasAttachments: !!body.attachments?.length,
+  }).catch(() => {});
   return { message, created: true };
 }
 
@@ -107,18 +122,24 @@ export async function systemMessage(botId: string, conversationId: string, text:
 export async function listMessages(viewerId: string, conversationId: unknown, before?: unknown, limitRaw?: unknown): Promise<MessageView[]> {
   const a = await access(conversationId, viewerId, "read");
   const limit = Math.min(Math.max(Number(limitRaw) || 50, 1), 100);
+  await markDelivered(viewerId, a.conv.id).catch(() => {});
   let rows: any[];
   if (before !== undefined && before !== null && before !== "") {
     if (!isUuid(before)) throw badRequest("before must be a message id");
     const cursor = await db.one(`SELECT seq FROM messages WHERE id = $1 AND conversation_id = $2`, [before, a.conv.id]);
     if (!cursor) throw badRequest("before cursor not found in this conversation");
-    rows = await db.query(`SELECT ${MSG_COLS} FROM messages m WHERE m.conversation_id = $1 AND m.seq < $2 ORDER BY m.seq DESC LIMIT $3`, [
+    rows = await db.query(`SELECT ${MSG_COLS} FROM messages m WHERE m.conversation_id = $1 AND m.seq < $2
+      AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $4 AND h.message_id = m.id)
+      ORDER BY m.seq DESC LIMIT $3`, [
       a.conv.id,
       cursor.seq,
       limit,
+      viewerId,
     ]);
   } else {
-    rows = await db.query(`SELECT ${MSG_COLS} FROM messages m WHERE m.conversation_id = $1 ORDER BY m.seq DESC LIMIT $2`, [a.conv.id, limit]);
+    rows = await db.query(`SELECT ${MSG_COLS} FROM messages m WHERE m.conversation_id = $1
+      AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $3 AND h.message_id = m.id)
+      ORDER BY m.seq DESC LIMIT $2`, [a.conv.id, limit, viewerId]);
   }
   return messageViews(rows);
 }
@@ -188,6 +209,25 @@ export async function deleteMessage(userId: string, messageId: unknown): Promise
   return broadcastUpdate(row.id);
 }
 
+/** "Delete for me": hide a message from this user's views without touching it for others. */
+export async function hideMessage(userId: string, messageId: unknown): Promise<{ ok: true }> {
+  const { row } = await visibleMessage(userId, messageId, "read");
+  await db.query(`INSERT INTO message_hides (user_id, message_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [userId, row.id]);
+  return { ok: true as const };
+}
+
+/** Per-recipient delivery/read state for a message the viewer can see. */
+export async function messageReceipts(viewerId: string, messageId: unknown) {
+  const { row, access: a } = await visibleMessage(viewerId, messageId, "read");
+  if (a.conv.kind === "channel") return { recipients: [] as any[], delivered_count: 0, read_count: 0 };
+  const recipients = await receiptsForMessage(row.id);
+  return {
+    recipients,
+    delivered_count: recipients.filter((r) => r.delivered_at).length,
+    read_count: recipients.filter((r) => r.read_at).length,
+  };
+}
+
 export async function markRead(conversationId: string, userId: string, messageId: string, kind: string) {
   const m = await db.one(`SELECT seq FROM messages WHERE id = $1 AND conversation_id = $2`, [messageId, conversationId]);
   if (!m) throw notFound("Message not found in this conversation");
@@ -202,6 +242,8 @@ export async function markRead(conversationId: string, userId: string, messageId
   // Read receipts go to dm/group members; for channels only to the reader's own devices.
   const audience = kind === "channel" ? [userId] : await memberIds(conversationId);
   publish(audience, { t: "read", conversation_id: conversationId, user_id: userId, message_id: messageId });
+  await markReadReceipts(userId, conversationId, Number(m.seq)).catch(() => {});
+  await markConversationNotificationsRead(userId, conversationId).catch(() => {});
 }
 
 /** Messages created or changed after `since` in every conversation the user can see (offline sync). */
@@ -216,6 +258,7 @@ export async function messagesSince(userId: string, since: string | null, limit 
        UNION
        SELECT c.id FROM conversations c JOIN dock_members dm ON dm.dock_id = c.dock_id AND dm.user_id = $1 WHERE c.kind = 'channel'
      )
+     AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $1 AND h.message_id = m.id)
      ORDER BY m.seq ASC LIMIT $3`,
     [userId, t.toISOString(), limit],
   );
@@ -245,8 +288,10 @@ export async function setPin(userId: string, messageId: unknown, on: boolean): P
 export async function listPins(userId: string, conversationId: unknown): Promise<MessageView[]> {
   const a = await access(conversationId, userId, "read");
   const rows = await db.query(
-    `SELECT ${MSG_COLS} FROM pins p JOIN messages m ON m.id = p.message_id WHERE p.conversation_id = $1 ORDER BY p.created_at DESC`,
-    [a.conv.id],
+    `SELECT ${MSG_COLS} FROM pins p JOIN messages m ON m.id = p.message_id
+     WHERE p.conversation_id = $1 AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $2 AND h.message_id = m.id)
+     ORDER BY p.created_at DESC`,
+    [a.conv.id, userId],
   );
   return messageViews(rows);
 }
@@ -277,8 +322,10 @@ export async function searchMessages(viewerId: string, conversationId: unknown, 
   for (let round = 0; round < 5 && out.length < limit; round++) {
     const rows = await db.query(
       `SELECT ${MSG_COLS} FROM messages m WHERE m.conversation_id = $1 AND m.deleted_at IS NULL AND m.seq < $2
-       AND lower(m.ciphertext) LIKE $3 ORDER BY m.seq DESC LIMIT $4`,
-      [a.conv.id, cursor, like, limit * 2],
+       AND lower(m.ciphertext) LIKE $3
+       AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.user_id = $5 AND h.message_id = m.id)
+       ORDER BY m.seq DESC LIMIT $4`,
+      [a.conv.id, cursor, like, limit * 2, viewerId],
     );
     if (!rows.length) break;
     for (const r of rows) {

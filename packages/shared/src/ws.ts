@@ -9,7 +9,7 @@
  */
 import type { MessageEnvelope } from "./envelope";
 import type { FeatureServerFrame } from "./features";
-import type { Conversation, MessageView, ID, Dock, User } from "./types";
+import type { Conversation, MessageView, ID, Dock, User, Notification } from "./types";
 
 export type ClientFrame =
   | { t: "pong" }
@@ -28,6 +28,8 @@ export type ServerFrame =
   | { t: "msg.update"; message: MessageView }
   | { t: "typing"; conversation_id: ID; user_id: ID }
   | { t: "read"; conversation_id: ID; user_id: ID; message_id: ID }
+  | { t: "receipt"; conversation_id: ID; user_id: ID; message_id: ID; delivered_at: string | null; read_at: string | null }
+  | { t: "notification"; notification: Notification }
   | { t: "conversation.upsert"; conversation: Conversation }
   | { t: "conversation.remove"; conversation_id: ID }
   | { t: "dock.upsert"; dock: Dock }
