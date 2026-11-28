@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle, Palette, Type, User as UserIcon } from "lucide-react";
+import "../auth/onboarding.css";
 import { errorMessage } from "../../lib/api";
 import { uploadAttachment } from "../../lib/media";
 import { useSession } from "../../stores/session";
@@ -90,7 +91,9 @@ export function NameScreen() {
           What’s your name?
         </h2>
         <p className="ob-sub">This is how people will see you. You can change it any time.</p>
-        <input className="ob-line" value={name} onChange={(e) => setName(e.target.value)} maxLength={48} placeholder="Your name" aria-label="Your name" />
+        <label className="ob-line">
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={48} placeholder="Your name" aria-label="Your name" />
+        </label>
         <div className="pe-preview" aria-label="Preview">
           <StyledName name={trimmed || user.display_name} />
         </div>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { MessageCircle, QrCode, ArrowLeft, CalendarDays, UserX } from "lucide-react";
+import { QrCode, ChevronLeft, ChevronRight, CalendarDays, UserX, UserPlus, Images, PenLine } from "lucide-react";
 import type { User } from "@shared";
 import { api, errorMessage, HttpError } from "../../lib/api";
 import { useSession } from "../../stores/session";
 import { useChat } from "../../stores/chat";
 import { toast } from "../../stores/toast";
-import { Avatar, Button, IconButton, Spinner, EmptyState, Wordmark } from "../../ui";
+import { Avatar, Spinner, EmptyState } from "../../ui";
 import { bannerStyle } from "./ProfileCard";
 import "./profile.css";
 
@@ -51,27 +51,19 @@ export function UserPage() {
     }
   };
 
-  const isMe = me && user && me.id === user.id;
+  const isMe = !!(me && user && me.id === user.id);
+  const back = () => (window.history.length > 1 ? nav(-1) : nav(token ? "/chats" : "/welcome"));
+  const joined = user ? new Date(user.created_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "";
 
   return (
-    <div className={`user-page ${token ? "" : "is-public"}`}>
-      {!token && (
-        <header className="user-page-top">
-          <Link to="/welcome" aria-label="Secrets home">
-            <Wordmark size={26} />
-          </Link>
-          <Link to="/login" className="btn btn-secondary btn-sm">
-            Sign in
-          </Link>
-        </header>
+    <div className={`up ${token ? "" : "is-public"}`}>
+      {state === "loading" && (
+        <div className="row" style={{ justifyContent: "center", padding: 80 }}>
+          <Spinner />
+        </div>
       )}
-      <div className="user-page-inner">
-        {state === "loading" && (
-          <div className="row" style={{ justifyContent: "center", padding: 80 }}>
-            <Spinner />
-          </div>
-        )}
-        {(state === "missing" || state === "error") && (
+      {(state === "missing" || state === "error") && (
+        <div className="up-empty">
           <EmptyState
             art={<UserX size={40} />}
             title={state === "missing" ? `@${username} isn’t on Secrets` : "Couldn’t load this profile"}
@@ -82,70 +74,59 @@ export function UserPage() {
               </Link>
             }
           />
-        )}
-        {state === "locked" && (
-          <article className="user-card">
-            <div className="profile-banner" style={bannerStyle(null)} />
-            <div className="profile-id">
-              <Avatar name={username} seed={username} size={104} ring />
-              <div className="profile-names">
-                <h1>@{username.toLowerCase()}</h1>
-                <span className="profile-handle">is on Secrets</span>
-              </div>
-              <p className="user-about">Sign in or create a free account to see their profile and start a private chat.</p>
-              <div className="row profile-cta">
-                <Button size="lg" icon={<MessageCircle size={17} />} onClick={() => nav("/login", { state: { from: `/u/${username}` } })}>
-                  Sign in to message
-                </Button>
-                <Link className="btn btn-secondary btn-lg" to="/signup">
-                  Create account
-                </Link>
-              </div>
+        </div>
+      )}
+      {(state === "ok" || state === "locked") && (
+        <article className="up-card" aria-label={user ? `${user.display_name}'s profile` : `@${username}`}>
+          <div className="up-cover" style={bannerStyle(user?.accent ?? null)}>
+            <button type="button" className="up-fab up-back" aria-label="Back" onClick={back}>
+              <ChevronLeft />
+            </button>
+            <button type="button" className="up-fab up-qr" aria-label="Share profile" onClick={() => nav(`/share?u=${encodeURIComponent(user?.username ?? username)}`)} disabled={!user}>
+              <QrCode />
+            </button>
+          </div>
+          <div className="up-sheet">
+            <div className="up-avatar">
+              <Avatar name={user?.display_name ?? username} src={user?.avatar_url} seed={user?.id ?? username} size={116} online={token && user ? !!presence[user.id] : undefined} />
             </div>
-          </article>
-        )}
-        {state === "ok" && user && (
-          <article className="user-card">
-            <div className="profile-banner" style={bannerStyle(user.accent)}>
-              {token && (
-                <IconButton label="Back" variant="soft" onClick={() => nav(-1)} className="user-back">
-                  <ArrowLeft size={19} />
-                </IconButton>
-              )}
-            </div>
-            <div className="profile-id">
-              <Avatar name={user.display_name} src={user.avatar_url} seed={user.id} size={104} ring online={token ? !!presence[user.id] : undefined} />
-              <div className="profile-names">
-                <h1>{user.display_name}</h1>
-                <span className="profile-handle">@{user.username}</span>
-              </div>
-              {user.about && <p className="user-about">{user.about}</p>}
-              <span className="faint row" style={{ gap: 6, fontSize: "var(--text-sm)" }}>
-                <CalendarDays size={14} /> On Secrets since {new Date(user.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-              </span>
-              <div className="row profile-cta">
-                {isMe ? (
-                  <Button variant="secondary" onClick={() => nav("/profile")}>
-                    Edit your profile
-                  </Button>
-                ) : (
-                  <Button icon={<MessageCircle size={17} />} onClick={() => void message()} loading={busy} size="lg">
-                    {token ? "Message" : "Sign in to message"}
-                  </Button>
-                )}
-                <Button variant="secondary" size="lg" icon={<QrCode size={17} />} onClick={() => nav(`/share?u=${encodeURIComponent(user.username)}`)}>
-                  Share
-                </Button>
-              </div>
-            </div>
-          </article>
-        )}
-        {!token && state !== "loading" && (
-          <p className="faint user-page-foot">
-            Secrets — your world, your people, your space. <Link to="/signup">Create an account</Link>
-          </p>
-        )}
-      </div>
+            {user ? (
+              <>
+                <h1 className="up-name">{user.display_name}</h1>
+                <p className="up-handle">@{user.username}</p>
+                {user.about && <p className="up-about">{user.about}</p>}
+                <p className="up-meta">
+                  <span>
+                    <CalendarDays aria-hidden /> Joined {joined}
+                  </span>
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="up-name">@{username.toLowerCase()}</h1>
+                <p className="up-handle">is on Secrets</p>
+                <p className="up-about">Sign in or create a free account to see their profile and start a private chat.</p>
+              </>
+            )}
+            {isMe ? (
+              <button type="button" className="up-primary" onClick={() => nav("/settings/profile")}>
+                <PenLine aria-hidden /> Edit profile
+              </button>
+            ) : (
+              <button type="button" className="up-primary" onClick={() => (user ? void message() : nav("/login", { state: { from: `/u/${username}` } }))} disabled={busy}>
+                <UserPlus aria-hidden /> Add Friend
+              </button>
+            )}
+            {token && user && !isMe && (
+              <button type="button" className="up-row" onClick={() => void message()}>
+                <Images aria-hidden />
+                <span>Media, files and links</span>
+                <ChevronRight aria-hidden />
+              </button>
+            )}
+          </div>
+        </article>
+      )}
     </div>
   );
 }

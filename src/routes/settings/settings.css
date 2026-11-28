@@ -94,10 +94,6 @@
 @media (min-width: 861px) { .ab-save { position: absolute; } .settings-main { position: relative; } }
 
 /* Onboarding-style name field reused on Name screen */
-.ob-title { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
-.ob-sub { margin: 10px 0 0; font-size: 17px; line-height: 1.4; color: color-mix(in oklab, var(--bp-text) 82%, transparent); }
-.ob-line { width: 100%; margin-top: 26px; padding: 6px 0 8px; border: 0; border-bottom: 1.5px solid var(--bp-text); background: none; color: var(--bp-text); font: inherit; font-size: 21px; outline: none; }
-.ob-line::placeholder { color: color-mix(in oklab, var(--bp-text) 60%, transparent); }
 
 /* Appearance (p10) */
 .ap-dot { display: inline-block; width: 31px; height: 31px; border-radius: 50%; vertical-align: middle; }
