@@ -1,24 +1,7 @@
-import { useSyncExternalStore } from "react";
+import { useSettings } from "../../stores/settings";
 
-const KEY = "secrets.moments.enabled";
-const subs = new Set<() => void>();
-const read = () => localStorage.getItem(KEY) !== "0";
-
-/** Local preference: show/hide the moments row on Chats. */
+/** Show/hide the stories (moments) tray on Chats. Backed by the settings store (Settings → Stories). */
 export function useMomentsEnabled(): [boolean, (v: boolean) => void] {
-  const v = useSyncExternalStore(
-    (cb) => {
-      subs.add(cb);
-      return () => subs.delete(cb);
-    },
-    read,
-    () => true,
-  );
-  return [
-    v,
-    (n: boolean) => {
-      localStorage.setItem(KEY, n ? "1" : "0");
-      subs.forEach((f) => f());
-    },
-  ];
+  const v = useSettings((s) => s.storiesEnabled);
+  return [v, (n: boolean) => useSettings.getState().set({ storiesEnabled: n })];
 }

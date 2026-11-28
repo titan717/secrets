@@ -170,15 +170,3 @@ select.select { height: 42px; background: var(--surface-2); border: 1px solid va
 .tip-right:hover::after { transform: translate(0, -50%); }
 
 /* ---------- Coach marks ---------- */
-.coach-spot { position: fixed; z-index: 140; border-radius: 14px; box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px rgba(0,0,0,.45); pointer-events: none; transition: all var(--t-slow) var(--ease-out); }
-.coach { position: fixed; z-index: 150; background: #fff; color: #17141f; border-radius: var(--r-lg); padding: var(--s-4); box-shadow: 0 20px 50px -10px rgba(0,0,0,.5); animation: pop var(--t-med) var(--ease-out); display: flex; flex-direction: column; gap: 6px; }
-.coach::before { content: ""; position: absolute; width: 14px; height: 14px; background: #fff; transform: rotate(45deg); left: calc(var(--arrow-x, 50%) - 7px); }
-.coach-up::before { top: -6px; }
-.coach-down::before { bottom: -6px; }
-.coach-none::before { display: none; }
-.coach-step { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #7c3aed; }
-.coach-title { font-size: var(--text-md); }
-.coach-body { font-size: var(--text-sm); color: #4b4658; }
-.coach-actions { display: flex; justify-content: space-between; align-items: center; margin-top: var(--s-2); }
-.coach-skip { font-size: var(--text-sm); color: #6b6578; }
-.coach-next { height: 34px; padding: 0 16px; border-radius: var(--r-pill); background: #17141f; color: #fff; font-weight: 600; font-size: var(--text-sm); }

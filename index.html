@@ -17,7 +17,7 @@
           var s = JSON.parse(localStorage.getItem("secrets.settings") || "{}").state || {};
           var t = s.theme || "system";
           if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-          document.documentElement.dataset.theme = t === "black" ? "dark" : t;
+          document.documentElement.dataset.theme = t;
         } catch (e) { document.documentElement.dataset.theme = "dark"; }
       })();
     </script>

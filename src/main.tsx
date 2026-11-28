@@ -10,6 +10,7 @@ import "./styles/tailwind.css";
 import "./styles/ui.css";
 import "./styles/app.css";
 import "./styles/chat.css";
+import "./styles/bp.css";
 
 // Remove the boot splash once React has mounted.
 requestAnimationFrame(() => {
