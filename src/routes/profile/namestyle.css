@@ -57,7 +57,7 @@
 .nb-strip { display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 8px; border-radius: 10px; overflow: hidden; }
 .nb-strip.compact { height: 36px; border-radius: 8px; }
 .nb-name { font-size: 15px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
-.nb-check { position: absolute; right: 6px; bottom: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.nb-check { position: absolute; right: 6px; bottom: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-fill); color: var(--on-accent); display: grid; place-items: center; }
 .nb-check svg { width: 11px; height: 11px; }
 .nb-meta { display: flex; flex-direction: column; padding: 6px 4px 6px; }
 .nb-title { font-size: 15px; font-weight: 600; }

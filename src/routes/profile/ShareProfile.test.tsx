@@ -22,13 +22,13 @@ describe("Share profile (p1)", () => {
     expect(screen.getAllByRole("radio")).toHaveLength(6);
   });
 
-  it("defaults to pink and cycles colour when the card is tapped", () => {
+  it("defaults to blue and cycles colour when the card is tapped", () => {
     renderAt(<ShareProfilePage />, "/share");
-    expect(screen.getByRole("radio", { name: "Pink" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "Blue" })).toHaveAttribute("aria-checked", "true");
     fireEvent.click(screen.getByRole("button", { name: /Profile card/ }));
-    expect(useSettings.getState().shareColor).toBe("green");
-    fireEvent.click(screen.getByRole("radio", { name: "Blue" }));
-    expect(useSettings.getState().shareColor).toBe("blue");
+    expect(useSettings.getState().shareColor).toBe("red");
+    fireEvent.click(screen.getByRole("radio", { name: "Pink" }));
+    expect(useSettings.getState().shareColor).toBe("pink");
   });
 
   it("toggles the signed-out preview setting", () => {

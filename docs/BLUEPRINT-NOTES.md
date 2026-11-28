@@ -19,7 +19,16 @@ follows the blueprint page named in `BLUEPRINT-CHECKLIST.md`.
 - The Intridium flame logo is replaced by `public/logo-mark.png` and the mascot by
   `public/mascot.png`, used as-is.
 - Yapin's orange (name style / banner sheets, p55–56) becomes the app accent. The default accent is
-  the purple Secrets gradient (`g-secrets`) from the overview mockup (p64).
+  Midnight blue (`g-midnight`, #2c3fb0 → #141b5c), added as the first gradient so the p7 grid keeps
+  full rows of six; it replaced the mockup's purple (`g-secrets`, still selectable) at the owner's
+  request. Accent text and icons use an AA-safe tint (`--accent`: #8c9cff on dark, #1f2a82 on light);
+  fills use the deep colour (`--accent-fill` / `--accent-solid`). The logo and mascot stay purple
+  because they are used as-is.
+- Neutral greys across the app use the blueprint kit's cool neutrals (#0e0e13 / #17181e / #1f2028)
+  instead of the older violet-tinted greys, so blueprint and non-blueprint screens match.
+- The share card defaults to the Blue colour (blueprint shows pink) to sit with the midnight accent.
+- The Copy / Share link colour and the accent toggle use the app accent instead of the blueprint's
+  #3b11fb, which also brings them to AA contrast.
 - The What's new hero (p37) is a photo in the blueprint; it uses the mascot on black instead.
   Release notes describe this release, in the blueprint's section/item structure.
 - The "Grace 3.5" hero title becomes "Secrets 0.2" (major.minor of `APP_VERSION`).
@@ -68,7 +77,7 @@ follows the blueprint page named in `BLUEPRINT-CHECKLIST.md`.
   of the "This is private…" note. Username ideas are the first name and first name + 4 digits, and
   only free ones are shown.
 - **Date picker (p42–43):** the blueprint's header text is white on white (illegible); ours uses the
-  calendar purple (#3c3787) so the selected date can be read. Tapping the month opens a year list.
+  calendar colour (#1d2675, midnight blue; blueprint #3c3787) so the selected date can be read. Tapping the month opens a year list.
 - **Google chooser (p45):** lists demo accounts (Ava, Maya). Picking one signs in; "Add another
   account" starts sign-up.
 - **Join or sign in (p47):** "Continue" asks for the password on a second step. "Use the old sign-in

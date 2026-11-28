@@ -148,7 +148,7 @@ select.select { height: 42px; background: var(--surface-2); border: 1px solid va
 @media (max-width: 860px) { .toaster { bottom: calc(var(--bottom-nav-h) + 16px + env(safe-area-inset-bottom)); } }
 
 /* ---------- Brand ---------- */
-.logo-mark { flex: none; filter: drop-shadow(0 4px 14px color-mix(in oklab, #a855f7 45%, transparent)); }
+.logo-mark { flex: none; filter: drop-shadow(0 4px 14px color-mix(in oklab, var(--accent-solid) 60%, transparent)); }
 .wordmark { display: inline-flex; align-items: center; gap: 10px; }
 .wordmark-text { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.28em; font-size: 0.95rem; }
 .ghost { filter: drop-shadow(0 18px 40px rgba(139,92,246,.35)); user-select: none; }

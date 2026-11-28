@@ -21,7 +21,7 @@ export const SHARE_COLORS = [
   { id: "black", name: "Black", dot: "#151518", c1: "#2b2b31", c2: "#050506", q1: "#000000", q2: "#1c1c22" },
 ] as const;
 export type ShareColor = (typeof SHARE_COLORS)[number];
-export const shareColor = (id: string | null | undefined): ShareColor => SHARE_COLORS.find((c) => c.id === id) ?? SHARE_COLORS[2];
+export const shareColor = (id: string | null | undefined): ShareColor => SHARE_COLORS.find((c) => c.id === id) ?? SHARE_COLORS[0];
 
 const linkLabel = (url: string) => url.replace(/^https?:\/\//, "");
 

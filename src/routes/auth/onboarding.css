@@ -84,9 +84,9 @@
 
 /* Date picker (p42–43). */
 .ob-dp { width: 100%; max-width: 320px; overflow: hidden; border-radius: 2px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); animation: ob-pop 0.2s ease; }
-.ob-dp-head { background: #fff; color: #3c3787; height: 93px; padding: 0 22px; display: flex; align-items: center; }
+.ob-dp-head { background: #fff; color: #1d2675; height: 93px; padding: 0 22px; display: flex; align-items: center; }
 .ob-dp-date { font-size: 31px; font-weight: 500; }
-.ob-dp-body { background: #3c3787; color: #fff; padding: 14px 10px 12px; }
+.ob-dp-body { background: #1d2675; color: #fff; padding: 14px 10px 12px; }
 .ob-dp-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 14px; }
 .ob-dp-nav button { width: 32px; height: 32px; display: grid; place-items: center; color: #fff; border-radius: 999px; }
 .ob-dp-nav button:disabled { opacity: 0.35; }
@@ -96,11 +96,11 @@
 .ob-wd { font-size: 11.5px; height: 32px; display: grid; place-items: center; }
 .ob-day { width: 36px; height: 36px; border-radius: 999px; font-size: 12.5px; color: #fff; display: grid; place-items: center; }
 .ob-day:hover { background: rgba(255, 255, 255, 0.12); }
-.ob-day.is-on { background: #fff; color: #3c3787; font-weight: 600; }
+.ob-day.is-on { background: #fff; color: #1d2675; font-weight: 600; }
 .ob-day:disabled { opacity: 0.35; }
 .ob-years { height: 256px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; scrollbar-width: thin; }
 .ob-year { height: 40px; border-radius: 999px; color: #fff; font-size: 14px; }
-.ob-year.is-on { background: #fff; color: #3c3787; font-weight: 700; }
+.ob-year.is-on { background: #fff; color: #1d2675; font-weight: 700; }
 .ob-dp-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 24px; }
 .ob-dp-actions button { color: #fff; font-size: 13.5px; font-weight: 500; letter-spacing: 0.02em; padding: 10px 12px; border-radius: 4px; }
 .ob-dp-actions button:hover { background: rgba(255, 255, 255, 0.1); }

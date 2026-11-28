@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Plus, Search, KeyRound, Link2, Copy, Hash, Users, Globe, Lock, Settings2, ArrowLeft, LogOut, UserPlus, X, Megaphone, Compass, Anchor } from "lucide-react";
+import { Plus, Search, KeyRound, Link2, Copy, Hash, Users, Globe, Lock, Settings2, ArrowLeft, LogOut, UserPlus, X, Megaphone, Anchor } from "lucide-react";
 import type { Dock, User } from "@shared";
 import { api, errorMessage } from "../../lib/api";
 import { useDocks, channelReadOnly, isStaff, roleRank } from "../../stores/docks";
@@ -217,9 +217,6 @@ function Discover({ onCreate, compact }: { onCreate: () => void; compact?: boole
     <div className={`discover ${compact ? "is-compact" : ""}`}>
       {!compact && (
         <div className="discover-hero">
-          <span className="discover-kicker">
-            <Compass size={14} /> Discover
-          </span>
           <h2>Find your people</h2>
           <p className="muted">Public docks are open communities — hop into channels, meet members, and start talking.</p>
           <div className="row" style={{ gap: 8, flexWrap: "wrap", justifyContent: "center" }}>

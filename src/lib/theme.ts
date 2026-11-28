@@ -10,6 +10,8 @@ export interface Accent {
   gradient?: boolean;
   /** Follows the theme: white on dark themes, black on light. */
   mono?: boolean;
+  /** Readable tint for text/icons, per theme family. Falls back to an automatic AA-safe tint. */
+  ink?: { dark: string; light: string };
 }
 
 /** Blueprint p7 "Solids", in order (6 per row). */
@@ -35,8 +37,9 @@ export const SOLID_ACCENTS: Accent[] = [
   { id: "purple", name: "Purple", c1: "#b417c0", c2: "#b417c0" },
 ];
 
-/** Blueprint p7 "Gradients" (vertical, top → bottom). First = Secrets purple (default). */
+/** Blueprint p7 "Gradients" (vertical, top → bottom). First = Midnight (default). */
 export const GRADIENT_ACCENTS: Accent[] = [
+  { id: "g-midnight", name: "Midnight", c1: "#2c3fb0", c2: "#141b5c", gradient: true, ink: { dark: "#8c9cff", light: "#1f2a82" } },
   { id: "g-secrets", name: "Secrets", c1: "#8f86ff", c2: "#d56fff", gradient: true },
   { id: "g-sun", name: "Sun", c1: "#fff016", c2: "#ffa516", gradient: true },
   { id: "g-sea", name: "Sea", c1: "#05e0f7", c2: "#40b2fd", gradient: true },
@@ -44,7 +47,7 @@ export const GRADIENT_ACCENTS: Accent[] = [
   { id: "g-candy", name: "Candy", c1: "#ff5ac6", c2: "#fe4e84", gradient: true },
 ];
 
-export const DEFAULT_ACCENT = "g-secrets";
+export const DEFAULT_ACCENT = "g-midnight";
 export const ALL_ACCENTS = [...SOLID_ACCENTS, ...GRADIENT_ACCENTS];
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -73,6 +76,21 @@ export const contrast = (a: string, b: string) => {
   const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
   return (x + 0.05) / (y + 0.05);
 };
+/**
+ * Accent used for text, icons and tints: the accent itself when it reads at AA (4.5:1) on the
+ * theme background, otherwise mixed toward white (dark themes) or black (light) until it does.
+ */
+export function accentInk(a: Accent, bg: string, light: boolean): string {
+  if (a.ink) return light ? a.ink.light : a.ink.dark;
+  const base = a.gradient ? mixHex(a.c1, a.c2, 0.5) : a.c1;
+  const toward = light ? "#000000" : "#ffffff";
+  for (let t = 0; t <= 1; t += 0.05) {
+    const c = mixHex(base, toward, t);
+    if (contrast(c, bg) >= 4.5) return c;
+  }
+  return toward;
+}
+
 /** Text colour on top of an accent fill: whichever of black/white has more contrast. */
 export const onColor = (hex: string) => (contrast(hex, "#000000") >= contrast(hex, "#ffffff") ? "#000000" : "#ffffff");
 
@@ -120,11 +138,13 @@ export function applyAppearance(opts: { theme: ThemeMode; accent: string; font: 
   let c1 = a.c1;
   let c2 = a.c2;
   if (a.mono) c1 = c2 = t === "light" ? "#111111" : "#ffffff";
-  root.style.setProperty("--accent", a.gradient ? mixHex(c1, c2, 0.5) : c1);
+  const bg = t === "light" ? "#f2f2f7" : t === "black" ? "#000000" : "#0e0e13";
+  root.style.setProperty("--accent", a.mono ? c1 : accentInk(a, bg, t === "light"));
+  root.style.setProperty("--accent-solid", a.gradient ? mixHex(c1, c2, 0.5) : c1);
   root.style.setProperty("--accent-2", c2);
   root.style.setProperty("--accent-fill", a.gradient ? `linear-gradient(135deg, ${c1}, ${c2})` : c1);
   root.style.setProperty("--on-accent", onColor(a.gradient ? mixHex(c1, c2, 0.5) : c1));
   root.style.setProperty("--font-body", fontStack(opts.font));
   const meta = document.querySelector('meta[name="theme-color"]');
-  meta?.setAttribute("content", t === "light" ? "#f4f4f7" : t === "black" ? "#000000" : "#0e0e13");
+  meta?.setAttribute("content", bg);
 }

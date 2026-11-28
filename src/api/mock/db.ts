@@ -88,7 +88,7 @@ function svgCover(a: string, b: string, label: string): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-const COVER_ONE = svgCover("#7c3aed", "#2e1065", "studio / 04");
+const COVER_ONE = svgCover("#2c3fb0", "#0b0f2e", "studio / 04");
 const COVER_TWO = svgCover("#a855f7", "#1e1b4b", "soft glow");
 
 let seq = 0;

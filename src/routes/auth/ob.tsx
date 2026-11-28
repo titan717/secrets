@@ -98,7 +98,7 @@ export const longDate = (s: string) => {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-/** Material-style date picker dialog (blueprint p42–43): white header, purple calendar, CANCEL / OK. */
+/** Material-style date picker dialog (blueprint p42–43): white header, midnight-blue calendar, CANCEL / OK. */
 export function DatePickerDialog({ open, value, max, onCancel, onOk }: { open: boolean; value: string | null; max: Date; onCancel: () => void; onOk: (v: string) => void }) {
   const [sel, setSel] = useState(() => (value ? fromIso(value) : new Date(2000, 0, 1)));
   const [view, setView] = useState(() => new Date(sel.getFullYear(), sel.getMonth(), 1));

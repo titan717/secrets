@@ -62,7 +62,7 @@ export const SETTINGS_DEFAULTS = {
   enterToSend: true,
   reduceMotion: false,
   storiesEnabled: true,
-  shareColor: "pink",
+  shareColor: "blue",
   nameStyle: DEFAULT_NAME_STYLE,
   nameBanner: null as string | null,
   whatsNewSeen: null as string | null,
@@ -83,10 +83,15 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "secrets.settings",
-      version: 2,
+      version: 3,
       // Older builds stored accent ids that no longer exist, fewer privacy keys, etc.
-      migrate: (persisted) => {
+      migrate: (persisted, version) => {
         const p = (persisted ?? {}) as Partial<SettingsState>;
+        // v3: Midnight blue replaced the Secrets purple as the default accent (and blue the share card).
+        if (version < 3) {
+          if (p.accent === "g-secrets") p.accent = DEFAULT_ACCENT;
+          if (p.shareColor === "pink") p.shareColor = "blue";
+        }
         const accent = p.accent && findAccent(p.accent).id === p.accent ? p.accent : DEFAULT_ACCENT;
         let storiesEnabled = p.storiesEnabled;
         try {

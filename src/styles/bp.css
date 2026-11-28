@@ -133,7 +133,7 @@
 }
 .bp-switch[aria-checked="true"] { background: var(--bp-pill); }
 .bp-switch[aria-checked="true"]::after { transform: translateX(calc(var(--w) - var(--h))); background: var(--bp-on-pill); }
-.bp-switch.accent[aria-checked="true"] { background: #3b11fb; }
+.bp-switch.accent[aria-checked="true"] { background: var(--accent-fill); }
 .bp-switch.accent[aria-checked="true"]::after { background: #fff; }
 :root[data-theme="light"] .bp-switch { background: #d4d4da; }
 :root[data-theme="light"] .bp-switch::after { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }

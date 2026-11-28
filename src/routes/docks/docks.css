@@ -8,7 +8,6 @@
 .dock-icon img { width: 100%; height: 100%; object-fit: cover; }
 
 .docks-head { display: flex; padding-top: max(env(safe-area-inset-top), 16px); }
-.docks-head .page-title { font-size: var(--text-xl); }
 @media (min-width: 861px) { .docks-head { padding: var(--s-4) var(--s-4) 0; } }
 .dock-row .badge { flex: none; }
 
@@ -24,11 +23,10 @@
 .discover-hero {
   text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--s-3);
   padding: var(--s-8) var(--s-6) var(--s-6);
-  background: radial-gradient(700px 300px at 50% 0%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 70%);
+  background: radial-gradient(700px 300px at 50% 0%, color-mix(in oklab, var(--accent-solid) 32%, transparent), transparent 70%);
 }
 .discover-hero h2 { font-size: clamp(1.6rem, 2.6vw, 2.25rem); letter-spacing: -0.03em; margin: 0; }
 .discover-hero p { max-width: 46ch; margin: 0; }
-.discover-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
 .discover-body { padding: 0 var(--s-6) var(--s-8); display: flex; flex-direction: column; gap: var(--s-4); width: 100%; max-width: 1040px; margin: 0 auto; }
 .discover.is-compact .discover-body { padding: 0 var(--s-2) var(--s-6); gap: var(--s-3); }
 .discover-search { flex: none; }

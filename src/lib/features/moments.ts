@@ -6,14 +6,15 @@ import { myId, useSession } from "../../stores/session";
 
 /** Background presets for text moments (id stored server-side, ≤64 chars). */
 export const BACKGROUNDS: Record<string, string> = {
-  aurora: "linear-gradient(135deg, #a855f7 0%, #6d28d9 55%, #1e1b4b 100%)",
+  aurora: "linear-gradient(135deg, #3b4fd0 0%, #1f2a82 55%, #0b0f2e 100%)",
   dusk: "linear-gradient(160deg, #f472b6 0%, #a855f7 50%, #4c1d95 100%)",
   ocean: "linear-gradient(150deg, #22d3ee 0%, #3b82f6 50%, #312e81 100%)",
   ember: "linear-gradient(150deg, #fb923c 0%, #e11d48 60%, #4c0519 100%)",
   forest: "linear-gradient(150deg, #4ade80 0%, #0d9488 55%, #042f2e 100%)",
   ink: "linear-gradient(160deg, #3f3a52 0%, #16141d 100%)",
 };
-export const bgFor = (id: string | null | undefined) => BACKGROUNDS[id ?? ""] ?? (id && /^#|^rgb|^hsl/.test(id) ? id : BACKGROUNDS.aurora);
+export const bgFor = (id: string | null | undefined) =>
+  BACKGROUNDS[id ?? ""] ?? (id && /^(#|rgb|hsl|linear-gradient|radial-gradient)/.test(id) ? id : BACKGROUNDS.aurora);
 
 interface MomentsState {
   groups: MomentGroup[];
