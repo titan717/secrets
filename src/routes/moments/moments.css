@@ -10,7 +10,9 @@
 
 .mring { position: relative; display: inline-grid; padding: 2.5px; border-radius: 50%; transition: transform var(--t-fast) var(--ease-out); }
 .mring > .avatar { box-shadow: 0 0 0 2.5px var(--surface-0); }
-.mring.is-new { background: conic-gradient(from 200deg, #c084fc, #a855f7, #6d28d9, #ec4899, #c084fc); }
+.mring.is-new { background: var(--accent-fill); }
+.mring.is-more { width: 59px; height: 59px; place-items: center; background: var(--surface-3); color: var(--text); }
+.mrow-heading { margin: 0; padding: 10px var(--s-4) 0; font-size: 14px; font-weight: 600; }
 .mring.is-seen { background: var(--border-strong); }
 .mring.is-mine { background: color-mix(in oklab, var(--accent) 45%, var(--surface-4)); }
 .mring.is-empty { background: transparent; box-shadow: inset 0 0 0 1.5px var(--border-strong); }

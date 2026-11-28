@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Plus, Search, KeyRound, Hash, Users, Globe, Lock, Settings2, ArrowLeft, LogOut, UserPlus, X, Megaphone, Compass, Anchor } from "lucide-react";
+import { Plus, Search, KeyRound, Link2, Copy, Hash, Users, Globe, Lock, Settings2, ArrowLeft, LogOut, UserPlus, X, Megaphone, Compass, Anchor } from "lucide-react";
 import type { Dock, User } from "@shared";
 import { api, errorMessage } from "../../lib/api";
 import { useDocks, channelReadOnly, isStaff, roleRank } from "../../stores/docks";
@@ -8,7 +8,7 @@ import { useChat } from "../../stores/chat";
 import { useSession } from "../../stores/session";
 import { useUi } from "../../stores/ui";
 import { toast } from "../../stores/toast";
-import { Avatar, Button, EmptyState, IconButton, AuthImage, Spinner } from "../../ui";
+import { Avatar, Button, EmptyState, IconButton, AuthImage, Spinner, Modal, CoachTour } from "../../ui";
 import { ChatView } from "../chats/ChatView";
 import { useInChatClass } from "../chats/ChatsPage";
 import { CreateDockModal, JoinCodeModal, ManageDockModal, RoleBadge, InviteBox } from "./DockModals";
@@ -96,12 +96,16 @@ function MyDocksList({ onCreate, onJoin, activeId }: { onCreate: () => void; onJ
   const loaded = useDocks((s) => s.mineLoaded);
   const error = useDocks((s) => s.mineError);
   const [q, setQ] = useState("");
+  const [handles, setHandles] = useState(false);
   const list = mine.map((id) => docks[id]).filter((d): d is Dock => !!d && (!q || d.name.toLowerCase().includes(q.toLowerCase())));
   return (
     <aside className="split-list">
       <div className="list-head docks-head">
         <h1 className="page-title">Docks</h1>
         <div className="row" style={{ gap: 4 }}>
+          <IconButton label="Dock handles" onClick={() => setHandles(true)} data-coach="dock-handles">
+            <Link2 size={19} />
+          </IconButton>
           <IconButton label="Join with invite code" onClick={onJoin}>
             <KeyRound size={19} />
           </IconButton>
@@ -161,6 +165,8 @@ function MyDocksList({ onCreate, onJoin, activeId }: { onCreate: () => void; onJ
           <Discover onCreate={onCreate} compact />
         </div>
       </div>
+      <DockHandlesModal open={handles} onClose={() => setHandles(false)} docks={mine.map((id) => docks[id]).filter((d): d is Dock => !!d)} />
+      <CoachTour id="docks-v1" steps={[{ target: "dock-handles", title: "Dock Handles", body: "See and manage your docks' public links and handles." }]} />
     </aside>
   );
 }
@@ -545,5 +551,40 @@ function DockMembersPanel({ dock, onManage }: { dock: Dock; onManage: (t: "overv
         )}
       </div>
     </div>
+  );
+}
+
+/** Public links and handles for the docks you're in (blueprint p23 "Dock Handles"). */
+function DockHandlesModal({ open, onClose, docks }: { open: boolean; onClose: () => void; docks: Dock[] }) {
+  const copy = async (d: Dock) => {
+    const link = `${window.location.origin}/docks/${d.id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Couldn't copy the link");
+    }
+  };
+  return (
+    <Modal open={open} onClose={onClose} title="Dock handles" size="sm">
+      {docks.length === 0 ? (
+        <p className="faint" style={{ padding: "4px 4px 12px" }}>Join or create a dock to get a public link.</p>
+      ) : (
+        <ul className="dh-list">
+          {docks.map((d) => (
+            <li key={d.id} className="dh-row">
+              <Avatar name={d.name} src={d.icon_url} seed={d.id} size={36} />
+              <span className="grow col" style={{ gap: 0, minWidth: 0 }}>
+                <span className="truncate" style={{ fontWeight: 600 }}>{d.name}</span>
+                <span className="truncate faint">secrets.app/d/{d.handle}</span>
+              </span>
+              <IconButton label={`Copy link to ${d.name}`} onClick={() => void copy(d)}>
+                <Copy size={17} />
+              </IconButton>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Modal>
   );
 }

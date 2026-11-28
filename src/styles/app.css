@@ -118,3 +118,10 @@
   .auth-step { flex: 1; }
   .auth-step .auth-spacer { flex: 1; }
 }
+
+/* Ask Grace button on the mobile chat list (blueprint p29–31). */
+.grace-fab { position: fixed; right: 16px; bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 16px); z-index: 39; width: 54px; height: 54px; border-radius: 50%; border: 0; display: grid !important; place-items: center; background: #1c1d22; box-shadow: 0 8px 24px -8px rgba(0,0,0,.6); cursor: pointer; transition: transform var(--t-fast) var(--ease-out); }
+.grace-fab:active { transform: scale(.94); }
+.grace-fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (min-width: 861px) { .grace-fab { display: none !important; } }
+[data-theme="light"] .grace-fab { background: #fff; box-shadow: 0 6px 20px -6px rgba(0,0,0,.25); }

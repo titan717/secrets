@@ -19,6 +19,8 @@ interface FeatureDB {
   folders: Omit<NoteFolder, "note_count">[];
   tasks: Task[];
   vault: (VaultItem & { data?: string })[];
+  /** Demo stories from friends are added once, on first read. */
+  seededStories?: boolean;
 }
 
 let cache: FeatureDB | null = null;
@@ -97,6 +99,17 @@ export function featureRoute(
 
   /* --------------------------------------------------------------- moments */
   if (area === "moments" || (area === "users" && seg[3] === "moments")) {
+    if (!d.seededStories) {
+      d.seededStories = true;
+      const friends = users.filter((u) => u.id !== me.id).slice(0, 3);
+      const texts = ["Sunday market haul", "Ship it.", "New glaze test"];
+      const bgs = ["linear-gradient(135deg,#8f86ff,#d56fff)", "linear-gradient(135deg,#0ea5e9,#6366f1)", "linear-gradient(135deg,#f97316,#ec4899)"];
+      friends.forEach((u, i) => {
+        const at = Date.now() - (i + 1) * 3_600_000;
+        d.moments.push({ id: uuid(), user_id: u.id, kind: "text", text: texts[i], background: bgs[i], attachment: null, visibility: "all_friends", created_at: iso(at), expires_at: iso(at + DAY), viewed: false, view_count: 0 });
+      });
+      save();
+    }
     const live = () => d.moments.filter((x) => Date.parse(x.expires_at) > Date.now());
     if (area === "users") {
       const u = users.find((x) => x.username === seg[2]);

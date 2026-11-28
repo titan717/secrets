@@ -72,7 +72,7 @@ export default function TasksPage() {
           value={tab}
           onChange={setTab}
           items={[
-            { id: "today", label: "Today", count: todayCount },
+            { id: "today", label: "Today", count: todayCount, coach: "ws-today" },
             { id: "upcoming", label: "Upcoming", count: b.upcoming.length },
             { id: "someday", label: "Someday", count: b.someday.length },
             { id: "done", label: "Done" },

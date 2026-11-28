@@ -69,7 +69,7 @@ export async function mockRequest(method: string, path: string, opts: Opts = {})
   /* ------------------------------------------------------------------ config */
 
   if (m === "GET" && seg[1] === "config") {
-    return { features: { calls: true, ai: true, docks: true, attachments: true, emailVerification: false, experimental: false } };
+    return { features: { calls: true, ai: true, docks: true, attachments: true, emailVerification: false, experimental: true } };
   }
 
   /* -------------------------------------------------------------------- auth */

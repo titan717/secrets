@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home, MessageCircle, Phone, Anchor, Sparkle, NotebookPen, ListChecks, Vault, Bell, Settings, Plus, User as UserIcon,
@@ -7,7 +7,7 @@ import {
 import { useSession } from "../stores/session";
 import { useChat } from "../stores/chat";
 import { Avatar, CoachTour, CountBadge, Modal, Wordmark, ListItem, Ghost } from "../ui";
-import { api } from "../lib/api";
+import { api, apiRaw } from "../lib/api";
 import { NewChatModal } from "./chats/NewChatModal";
 import { AiDrawer } from "./ai/AiDrawer";
 import { useUi } from "../stores/ui";
@@ -21,9 +21,9 @@ const PRIMARY = [
   { to: "/moments", label: "Moments", icon: Sparkle },
 ];
 const SECONDARY = [
-  { to: "/notes", label: "Notes", icon: NotebookPen, soon: false },
-  { to: "/tasks", label: "Tasks", icon: ListChecks, soon: false },
-  { to: "/vault", label: "Vault", icon: Vault, soon: false },
+  { to: "/notes", label: "Notes", icon: NotebookPen, soon: false, coach: "ws-notes" },
+  { to: "/tasks", label: "Tasks", icon: ListChecks, soon: false, coach: "ws-tasks" },
+  { to: "/vault", label: "Vault", icon: Vault, soon: false, coach: "ws-drive" },
 ];
 
 export function useUnreadTotal() {
@@ -102,8 +102,25 @@ function VerifyBanner() {
   );
 }
 
+/** Unread notification count for the sidebar badge (mockup p64). */
+function useNotifCount() {
+  const [n, setN] = useState(0);
+  const loc = useLocation();
+  useEffect(() => {
+    let live = true;
+    apiRaw<{ count: number }>("GET /v1/notifications/unread-count")
+      .then((r) => live && setN(r.count))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [loc.pathname]);
+  return n;
+}
+
 function Sidebar() {
   const unread = useUnreadTotal();
+  const notifs = useNotifCount();
   const openAi = useUi((s) => s.setAiOpen);
   const flags = useFlags((s) => s.flags);
   const primary = PRIMARY.filter((i) => (i.to === "/moments" ? flags.experimental : i.to === "/calls" ? flags.calls : i.to === "/docks" ? flags.docks : true));
@@ -124,7 +141,7 @@ function Sidebar() {
       </div>
       <div className="nav-group">
         {secondary.map((i) => (
-          <NavLink key={i.to} to={i.to} className="nav-item">
+          <NavLink key={i.to} to={i.to} className="nav-item" data-coach={i.coach}>
             <i.icon size={19} strokeWidth={1.9} />
             <span className="grow">{i.label}</span>
             {i.soon && <span className="soon-tag">Soon</span>}
@@ -143,6 +160,7 @@ function Sidebar() {
         <NavLink to="/notifications" className="nav-item">
           <Bell size={19} strokeWidth={1.9} />
           <span className="grow">Notifications</span>
+          <CountBadge count={notifs} />
         </NavLink>
         <NavLink to="/settings" className="nav-item" data-coach="nav-settings">
           <Settings size={19} strokeWidth={1.9} />
@@ -173,16 +191,16 @@ function MobileNav({ onPlus }: { onPlus: () => void }) {
         </span>
         <span>Calls</span>
       </NavLink>
-      <button className="mnav-fab" onClick={onPlus} aria-label="Create" data-coach="fab">
+      <button className="mnav-fab" onClick={onPlus} aria-label="Add friends and more" data-coach="fab">
         <Plus size={26} />
       </button>
-      <NavLink to="/docks" className="mnav">
+      <NavLink to="/docks" className="mnav" data-coach="m-docks">
         <span className="mnav-ico">
           <Anchor size={22} />
         </span>
         <span>Docks</span>
       </NavLink>
-      <NavLink to="/profile" className="mnav">
+      <NavLink to="/profile" className="mnav" data-coach="m-profile">
         <span className="mnav-ico">
           <UserIcon size={22} />
         </span>
@@ -203,6 +221,27 @@ function ConnectionBanner() {
   );
 }
 
+const isMobile = () => typeof window !== "undefined" && window.matchMedia("(max-width: 860px)").matches;
+
+/** First-run Chats tour (blueprint p29–32): Add friends, Ask Grace, Docks, Your settings, Stories are optional. */
+function ChatsTour() {
+  const nav = useNavigate();
+  const m = isMobile();
+  return (
+    <CoachTour
+      id="chats-v2"
+      delay={900}
+      steps={[
+        { target: m ? "fab" : "new-chat", title: "Add friends", body: "Find people by their username and start chatting." },
+        { target: m ? "grace" : "nav-ai", title: "Ask Grace", body: "Your AI assistant. Ask anything, or let it plan your day." },
+        { target: m ? "m-docks" : "nav-docks", title: "Docks", body: "Your communities live here. Join a public dock or start your own." },
+        { target: m ? "m-profile" : "nav-settings", title: "Your settings", body: m ? "Tap Profile for profile, privacy, notifications and more." : "Open Settings for profile, privacy, notifications and more." },
+        { target: "stories", title: "Stories are optional", body: "Don't use them? Turn stories off in Settings and this row goes away.", secondary: "Got it", action: () => nav("/settings/stories") },
+      ]}
+    />
+  );
+}
+
 export function Shell() {
   const [plus, setPlus] = useState(false);
   const newChat = useUi((s) => s.newChat);
@@ -212,6 +251,7 @@ export function Shell() {
   const nav = useNavigate();
   const loc = useLocation();
   // Settings subpages, share and what's-new are full-screen on mobile (blueprint p1, p4–p16, p33).
+  const atChats = /^\/(chats|home)\/?$/.test(loc.pathname);
   const hideNav = /^\/settings\/.+/.test(loc.pathname) || /^\/(share|whats-new)/.test(loc.pathname);
   return (
     <div className="shell">
@@ -228,21 +268,29 @@ export function Shell() {
           <ListItem icon={<Users size={18} />} title="New group" subtitle="Bring a few people together" chevron onClick={() => (setPlus(false), setNewChat("group"))} />
           <ListItem icon={<Hash size={18} />} title="Create a dock" subtitle="Channels for a community" chevron onClick={() => (setPlus(false), nav("/docks?create=1"))} />
           <ListItem icon={<KeyRound size={18} />} title="Join with invite code" chevron onClick={() => (setPlus(false), nav("/docks?join=1"))} />
-          <ListItem leading={<Ghost size={22} />} title="Ask the ghost" subtitle="Your AI assistant" chevron onClick={() => (setPlus(false), setAiOpen(true))} />
+          <ListItem leading={<Ghost size={22} />} title="Ask Grace" subtitle="Your AI assistant" chevron onClick={() => (setPlus(false), setAiOpen(true))} />
+          <ListItem icon={<ListChecks size={18} />} title="Tasks" subtitle="What's due today and coming up" chevron onClick={() => (setPlus(false), nav("/tasks"))} />
+          <ListItem icon={<NotebookPen size={18} />} title="Notes" subtitle="Notes next to your tasks" chevron onClick={() => (setPlus(false), nav("/notes"))} />
+          <ListItem icon={<Vault size={18} />} title="Vault" subtitle="Your cloud drive · 5 GB free" chevron onClick={() => (setPlus(false), nav("/vault"))} />
         </div>
       </Modal>
       <NewChatModal mode={newChat} onClose={() => setNewChat(null)} />
       <AiDrawer open={aiOpen} onClose={() => setAiOpen(false)} />
-      {!loc.pathname.startsWith("/ai") && (
-      <CoachTour
-        id="shell-v1"
-        steps={[
-          { target: "nav-messages", title: "All your chats, one place", body: "Direct messages and groups live here. Unread counts show up right on the icon." },
-          { target: "new-chat", title: "Start something", body: "Find anyone by their @username, or pick a few people to make a group." },
-          { target: "nav-docks", title: "Docks are for communities", body: "Create a dock with channels, or join a public one from Discover." },
-          { target: "nav-ai", title: "Meet the ghost", body: "Ask your AI assistant anything. Your API keys never leave this device." },
-        ]}
-      />
+      {atChats && (
+        <button className="grace-fab" onClick={() => setAiOpen(true)} aria-label="Ask Grace" data-coach="grace">
+          <img src="/ghost-128.png" alt="" width={30} height={31} />
+        </button>
+      )}
+      {atChats && <ChatsTour />}
+      {/^\/(tasks|notes|vault)/.test(loc.pathname) && (
+        <CoachTour
+          id="workspace-v1"
+          steps={[
+            { target: "ws-today", title: "Today", body: "What's due today and what's coming up, at a glance." },
+            { target: "ws-notes", title: "Notes", body: "Write notes and keep them next to your tasks." },
+            { target: "ws-drive", title: "Secrets has a cloud drive", body: "Tap Vault to keep your files safe in the cloud. 5 GB free." },
+          ]}
+        />
       )}
     </div>
   );

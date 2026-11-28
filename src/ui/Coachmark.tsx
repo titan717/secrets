@@ -7,6 +7,9 @@ export interface CoachStep {
   target: string;
   title: string;
   body: string;
+  /** Text button next to the pill (p29 "Got it"); the pill then reads "Continue" and runs `action`. */
+  secondary?: string;
+  action?: () => void;
 }
 
 /** Find the first visible `[data-coach=target]` element. */
@@ -82,7 +85,10 @@ function Bubble({ rect, title, body, index, total, primary, onPrimary, secondary
     ring = { left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2, borderRadius: radius ? radius + pad : 14 };
     const cx = r.left + r.width / 2;
     const left = Math.min(vw - width - 16, Math.max(16, cx - width / 2));
-    const below = r.bottom + pad + GAP + h < vh - 8 || r.top - pad - GAP - h < 8;
+    // Prefer the side with more room: targets in the lower half get the bubble above (p28, p31–32).
+    const fitsBelow = r.bottom + pad + GAP + h < vh - 8;
+    const fitsAbove = r.top - pad - GAP - h > 8;
+    const below = r.top + r.height / 2 < vh / 2 ? fitsBelow || !fitsAbove : !fitsAbove;
     style = below ? { left, top: r.bottom + pad + GAP, width } : { left, top: r.top - pad - GAP - h, width };
     const ax = Math.min(width - 22, Math.max(16, cx - left - 7));
     arrow = below ? { left: ax, top: -6 } : { left: ax, bottom: -6 };
@@ -138,14 +144,20 @@ export function CoachTour({
   const seen = useSettings((s) => !!s.coachSeen[id]);
   const markCoach = useSettings((s) => s.markCoach);
   const [i, setI] = useState(-1);
+  const [active, setActive] = useState<CoachStep[]>([]);
 
   useEffect(() => {
     if (seen) return;
-    const t = setTimeout(() => setI(0), delay);
+    const t = setTimeout(() => {
+      const visible = steps.filter((s) => findTarget(s.target));
+      if (!visible.length) return;
+      setActive(visible);
+      setI(0);
+    }, delay);
     return () => clearTimeout(t);
   }, [seen, delay]);
 
-  const step = i >= 0 ? steps[i] : undefined;
+  const step = i >= 0 ? active[i] : undefined;
   const rect = useRect(() => (step ? findTarget(step.target) : null), step?.target);
 
   if (seen || !step) return null;
@@ -153,7 +165,7 @@ export function CoachTour({
     markCoach(id);
     setI(-1);
   };
-  const last = i === steps.length - 1;
+  const last = i === active.length - 1;
   const next = () => (last ? finish() : setI(i + 1));
   return (
     <Bubble
@@ -161,15 +173,16 @@ export function CoachTour({
       title={step.title}
       body={step.body}
       index={i}
-      total={steps.length}
-      primary={last ? (finalSecondary ? "Continue" : "Got it") : "Next"}
+      total={active.length}
+      primary={step.secondary || (last && finalSecondary) ? "Continue" : last ? "Got it" : "Next"}
       onPrimary={() => {
-        if (last && onFinalPrimary) {
+        const act = step.action ?? (last ? onFinalPrimary : undefined);
+        if (act) {
           finish();
-          onFinalPrimary();
+          act();
         } else next();
       }}
-      secondary={last ? finalSecondary : undefined}
+      secondary={step.secondary ?? (last ? finalSecondary : undefined)}
       onSecondary={finish}
       onDismiss={finish}
     />

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, ShieldCheck, Lock, UserPlus, LogOut, X, Pencil, Check, Link2, FileText, Pin } from "lucide-react";
+import { Bell, ShieldCheck, Lock, UserPlus, LogOut, X, Pencil, Check, Link2, FileText, Pin, Image as ImageIcon } from "lucide-react";
 import type { Attachment, Conversation, MessageView, User } from "@shared";
 import { openBody } from "@shared";
 import { conversationPeer, conversationTitle, useChat } from "../../stores/chat";
@@ -126,6 +126,7 @@ export function InfoPanel({ conversation: c, onClose }: { conversation: Conversa
         <ListItem icon={<ShieldCheck size={17} />} title="Encryption" value={<span className="faint">E2EE rolling out</span>} />
         <ListItem icon={<Lock size={17} />} title={c.kind === "dm" ? "Direct message" : "Group type"} value="Private" />
         <ListItem icon={<Pin size={17} />} title="Pinned messages" chevron onClick={loadPins} />
+        <ListItem icon={<ImageIcon size={17} />} title="Wallpaper" chevron onClick={() => nav("/settings/appearance/wallpaper")} />
       </div>
 
       <Tabs

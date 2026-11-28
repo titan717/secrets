@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
 
-export interface TabItem<T extends string> { id: T; label: ReactNode; count?: number }
+export interface TabItem<T extends string> { id: T; label: ReactNode; count?: number; coach?: string }
 export function Tabs<T extends string>({ items, value, onChange, variant = "underline", className = "" }: { items: TabItem<T>[]; value: T; onChange: (v: T) => void; variant?: "underline" | "pill"; className?: string }) {
   const id = useId();
   return (
@@ -13,6 +13,7 @@ export function Tabs<T extends string>({ items, value, onChange, variant = "unde
           aria-selected={value === t.id}
           className={`tab ${value === t.id ? "is-active" : ""}`}
           onClick={() => onChange(t.id)}
+          data-coach={t.coach}
         >
           {t.label}
           {t.count ? <span className="tab-count">{t.count}</span> : null}
