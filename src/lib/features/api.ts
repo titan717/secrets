@@ -1,10 +1,11 @@
-/** Typed clients for Moments, Notes, Tasks and Vault (routes in apps/api/README.md). */
+/** Typed clients for Moments, Notes, Tasks and Vault (answered by the mock API in src/api/mock). */
 import type {
   Moment, MomentGroup, MomentSettings, MomentVisibility, Note, NoteFolder, Task, TaskSummary, TaskView, TaskPriority,
   VaultItem, VaultUsage, User,
 } from "@shared";
 import { apiRaw } from "../api";
-import { API_URL } from "../../config";
+import { API_URL, USE_MOCKS } from "../../config";
+import { mockVaultUpload } from "../../api/mock/features";
 import { getToken } from "../../stores/session";
 
 export const momentsApi = {
@@ -54,6 +55,7 @@ export const vaultApi = {
   remove: (id: string) => apiRaw<{ ok: true }>("DELETE /v1/vault/:id", { params: { id } }),
   /** XHR upload with progress. */
   upload(file: File, onProgress?: (p: number) => void, signal?: AbortSignal): Promise<VaultItem> {
+    if (USE_MOCKS) return mockVaultUpload(file, onProgress);
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${API_URL}/v1/vault`);
@@ -81,6 +83,7 @@ export const vaultApi = {
   },
   /** Fetch file bytes with the bearer token. */
   async blob(item: VaultItem): Promise<Blob> {
+    if (USE_MOCKS) return (await fetch(item.url)).blob();
     const r = await fetch(`${API_URL}${item.url}?inline=1`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
     if (!r.ok) throw new Error(`Couldn't open file (${r.status})`);
     return r.blob();

@@ -2,7 +2,7 @@
  * The mock REST router. It receives the same method/path/opts the real client
  * would send, and answers from the demo database in `./db.ts`.
  */
-import type { Attachment, Dock, DockRole, MessageView, Session, User } from "@shared";
+import type { Attachment, Dock, DockRole, Session, User } from "@shared";
 import { openBody } from "@shared";
 import { HttpError } from "../../lib/httpError";
 import { uuid } from "../../lib/id";
@@ -24,6 +24,7 @@ import {
   toNotification,
   userByUsername,
 } from "./db";
+import { featureRoute } from "./features";
 
 interface Opts {
   body?: unknown;
@@ -190,7 +191,7 @@ export async function mockRequest(method: string, path: string, opts: Opts = {})
         .filter((u) => u.username.toLowerCase().includes(needle) || u.display_name.toLowerCase().includes(needle))
         .slice(0, 20);
     }
-    if (m === "GET" && seg[2]) {
+    if (m === "GET" && seg[2] && !seg[3]) {
       const u = userByUsername(decodeURIComponent(seg[2]));
       if (!u) throw notFound("User not found");
       return u;
@@ -663,6 +664,14 @@ export async function mockRequest(method: string, path: string, opts: Opts = {})
         .map(toDock)
         .slice(0, 10),
     };
+  }
+
+  /* ------------------------------------------- moments, notes, tasks, drive */
+
+  if (["moments", "notes", "tasks", "vault"].includes(seg[1]) || (seg[1] === "users" && seg[3] === "moments")) {
+    const { db, me } = requireSession();
+    const out = featureRoute(m, seg, (opts.body ?? {}) as Record<string, any>, q, me, db.users);
+    if (out !== undefined) return out;
   }
 
   throw notFound(`${method} ${url.pathname}`);
