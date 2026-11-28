@@ -80,7 +80,7 @@ export const useMoments = create<MomentsState>((set, get) => ({
       set({ groups: sortGroups(gs.map((g) => (g === owner ? regroup({ ...g, moments: [...g.moments, m] }) : g))) });
       return;
     }
-    const user = useChat.getState().users[m.user_id] ?? (m.user_id === myId() ? useSessionUser() : undefined);
+    const user = useChat.getState().users[m.user_id] ?? (m.user_id === myId() ? sessionUser() : undefined);
     if (!user) {
       void get().load();
       return;
@@ -89,7 +89,7 @@ export const useMoments = create<MomentsState>((set, get) => ({
   },
 }));
 
-function useSessionUser() {
+function sessionUser() {
   return useSession.getState().user ?? undefined;
 }
 

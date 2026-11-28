@@ -73,8 +73,8 @@ export function EffortSlider({ open, onClose, onCustom }: { open: boolean; onClo
           aria-valuenow={idx < 0 ? 2 : idx}
           aria-valuetext={`${label} effort`}
           onKeyDown={(e) => {
-            if (e.key === "ArrowRight" || e.key === "ArrowUp") (e.preventDefault(), step(1));
-            if (e.key === "ArrowLeft" || e.key === "ArrowDown") (e.preventDefault(), step(-1));
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); step(1); }
+            if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); step(-1); }
             if (e.key === "Home") set({ effort: "instant" });
             if (e.key === "End") set({ effort: "ultra" });
           }}

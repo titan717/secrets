@@ -87,7 +87,7 @@ export const useChat = create<ChatState>((set, get) => {
     if (!cur || iso > cur) saveLastSync(uid, iso);
   };
 
-  const ingest = (msgs: MessageView[], opts: { live: boolean }) => {
+  const ingest = (msgs: MessageView[], _opts: { live: boolean }) => {
     if (!msgs.length) return;
     const byConv: Record<string, MessageView[]> = {};
     for (const m of msgs) (byConv[m.conversation_id] ??= []).push(m);

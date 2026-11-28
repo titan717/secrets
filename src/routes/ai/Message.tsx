@@ -34,9 +34,9 @@ function LiveStatus({ item }: { item: AssistantItem }) {
   let label = "Working";
   let since = new Date(item.at).getTime();
   if (runningTool?.confirm === "pending") label = "Waiting for your approval";
-  else if (act && (!last || last.type !== "text")) (label = act.label.replace(/…$/, ""), (since = act.at));
+  else if (act && (!last || last.type !== "text")) { label = act.label.replace(/…$/, ""); since = act.at; }
   else if (runningTool) label = toolLabel(runningTool.name);
-  else if (last?.type === "reasoning") (label = "Thinking", (since = item.thinkStart ?? since));
+  else if (last?.type === "reasoning") { label = "Thinking"; since = item.thinkStart ?? since; }
   else if (last?.type === "text") return null;
   const secs = Math.max(0, Math.floor((now - since) / 1000));
   return (

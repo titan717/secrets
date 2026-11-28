@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, SquarePen, Plus, Clock, X } from "lucide-react";
+import { Search, SquarePen, Clock, X } from "lucide-react";
 import type { Conversation, User } from "@shared";
 import { conversationPeer, conversationTitle, previewText, useChat } from "../../stores/chat";
 import { useSession } from "../../stores/session";

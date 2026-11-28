@@ -39,7 +39,7 @@ export default function ProvidersPage() {
               onClick={() => {
                 if (!c.provider) return;
                 if (c.provider === "mock" || on) s.set({ provider: c.provider });
-                else (setKey(""), setEdit(c.provider));
+                else { setKey(""); setEdit(c.provider); }
               }}
               aria-pressed={active}
             >
