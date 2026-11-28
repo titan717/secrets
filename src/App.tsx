@@ -25,6 +25,7 @@ const VaultPage = lazy(() => import("./routes/vault"));
 const DocksPage = lazy(() => import("./routes/docks/DocksPage").then((m) => ({ default: m.DocksPage })));
 const AiPage = lazy(() => import("./routes/ai/AiPage").then((m) => ({ default: m.AiPage })));
 const CallsPage = lazy(() => import("./routes/calls/CallsPage").then((m) => ({ default: m.CallsPage })));
+const ShareProfilePage = lazy(() => import("./routes/profile/ShareProfile").then((m) => ({ default: m.ShareProfilePage })));
 const SettingsPage = lazy(() => import("./routes/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const CallOverlay = lazy(() => import("./routes/calls/CallOverlay").then((m) => ({ default: m.CallOverlay })));
 
@@ -124,6 +125,7 @@ export function App() {
             <Route path="/docks/:id" element={flags.docks ? <DocksPage /> : <Navigate to="/chats" replace />} />
             <Route path="/docks/:id/:channelId" element={flags.docks ? <DocksPage /> : <Navigate to="/chats" replace />} />
             <Route path="/ai/*" element={flags.ai ? <AiPage /> : <Navigate to="/chats" replace />} />
+            <Route path="/share" element={<ShareProfilePage />} />
             <Route path="/profile" element={<SettingsPage />} />
             <Route path="/settings/*" element={<SettingsPage />} />
             <Route path="/moments" element={flags.experimental ? <MomentsPage /> : <Navigate to="/home" replace />} />

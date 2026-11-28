@@ -7,7 +7,7 @@ import { useSession } from "../../stores/session";
 import { useChat } from "../../stores/chat";
 import { toast } from "../../stores/toast";
 import { Avatar, Button, IconButton, Spinner, EmptyState, Wordmark } from "../../ui";
-import { ShareProfileModal, bannerStyle } from "./ProfileCard";
+import { bannerStyle } from "./ProfileCard";
 import "./profile.css";
 
 export function UserPage() {
@@ -19,7 +19,6 @@ export function UserPage() {
   const [user, setUser] = useState<User | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "missing" | "error" | "locked">("loading");
   const [busy, setBusy] = useState(false);
-  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -134,7 +133,7 @@ export function UserPage() {
                     {token ? "Message" : "Sign in to message"}
                   </Button>
                 )}
-                <Button variant="secondary" size="lg" icon={<QrCode size={17} />} onClick={() => setSharing(true)}>
+                <Button variant="secondary" size="lg" icon={<QrCode size={17} />} onClick={() => nav(`/share?u=${encodeURIComponent(user.username)}`)}>
                   Share
                 </Button>
               </div>
@@ -147,7 +146,6 @@ export function UserPage() {
           </p>
         )}
       </div>
-      {user && <ShareProfileModal user={user} open={sharing} onClose={() => setSharing(false)} />}
     </div>
   );
 }
