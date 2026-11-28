@@ -19,4 +19,5 @@
 .wn-item p.dim { color: #4f4f4f; }
 .wn-foot { position: sticky; bottom: 0; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, #000 70%, rgba(0, 0, 0, 0)); }
 .wn-continue { display: block; width: 100%; max-width: 600px; height: 52px; border-radius: 999px; background: #fff; color: #000; font-size: 16px; font-weight: 700; }
-@media (min-width: 861px) { .wn-body, .wn-foot { margin: 0 auto; } .wn-body { width: 100%; } .wn-foot { width: 100%; max-width: 680px; } .wn-hero { max-width: 680px; margin: 0 auto; } }
+.wn-inner { position: relative; max-width: 680px; margin: 0 auto; }
+@media (min-width: 861px) { .wn-foot { width: 100%; max-width: 680px; margin: 0 auto; } }

@@ -1,5 +1,5 @@
 /* Share profile — blueprint p1 (values in dp @360). */
-.sp-screen { max-width: 420px; margin: 0 auto; padding: 0 20px calc(24px + env(safe-area-inset-bottom)); min-height: 100%; color: var(--bp-text, var(--text)); }
+.sp-screen { max-width: 420px; margin: 0 auto; padding: 8px 20px calc(24px + env(safe-area-inset-bottom)); min-height: 100%; color: var(--bp-text, var(--text)); }
 .sp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .sp-head h1 { font-size: 18px; font-weight: 700; line-height: 1.2; margin: 0; }
 .sp-head p { font-size: 12px; color: var(--bp-sub, var(--text-2)); margin: 2px 0 0; }
