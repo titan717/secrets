@@ -108,7 +108,7 @@ export function MomentSettings({ open, onClose, onSaved }: { open: boolean; onCl
   );
 }
 
-function PeoplePicker({ title, initial, onCancel, onDone }: { title: string; initial: string[]; onCancel: () => void; onDone: (ids: string[]) => void }) {
+export function PeoplePicker({ title, initial, onCancel, onDone }: { title: string; initial: string[]; onCancel: () => void; onDone: (ids: string[]) => void }) {
   const users = useChat((s) => s.users);
   const [sel, setSel] = useState<Set<string>>(() => new Set(initial));
   const [q, setQ] = useState("");

@@ -211,15 +211,17 @@ export function Shell() {
   const setAiOpen = useUi((s) => s.setAiOpen);
   const nav = useNavigate();
   const loc = useLocation();
+  // Settings subpages, share and what's-new are full-screen on mobile (blueprint p1, p4–p16, p33).
+  const hideNav = /^\/settings\/.+/.test(loc.pathname) || /^\/(share|whats-new)/.test(loc.pathname);
   return (
     <div className="shell">
       <Sidebar />
-      <div className="shell-main">
+      <div className={`shell-main ${hideNav ? "hide-nav" : ""}`}>
         <ConnectionBanner />
         <VerifyBanner />
         <Outlet />
       </div>
-      <MobileNav onPlus={() => setPlus(true)} />
+      {!hideNav && <MobileNav onPlus={() => setPlus(true)} />}
       <Modal open={plus} onClose={() => setPlus(false)} title="Create" size="sm">
         <div className="list-group-body">
           <ListItem icon={<UserPlus size={18} />} title="New chat" subtitle="Message someone by username" chevron onClick={() => (setPlus(false), setNewChat("dm"))} />
