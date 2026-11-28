@@ -22,7 +22,8 @@ export function Login() {
     setBusy(true);
     setError(null);
     try {
-      const s = await api("POST /v1/auth/login", { body: { username: username.trim().toLowerCase().replace(/^@/, ""), password } });
+      const id = username.trim();
+      const s = await api("POST /v1/auth/login", { body: id.includes("@") ? { username: id.toLowerCase(), password } : { username: id.toLowerCase().replace(/^@/, ""), password } });
       setSession(s);
       const from = (loc.state as { from?: string } | null)?.from;
       nav(from && from !== "/welcome" ? from : "/chats", { replace: true });
@@ -42,8 +43,8 @@ export function Login() {
           </IconButton>
         </div>
         <h2 className="auth-title">Welcome back</h2>
-        <p className="muted auth-sub">Sign in with your Secrets username.</p>
-        <Input label="Username" leading={<AtSign size={16} />} autoComplete="username" autoCapitalize="none" spellCheck={false} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="yourname" autoFocus />
+        <p className="muted auth-sub">Sign in with your username or email.</p>
+        <Input label="Username or email" leading={<AtSign size={16} />} autoComplete="username" autoCapitalize="none" spellCheck={false} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="yourname" autoFocus />
         <Input
           label="Password"
           type={show ? "text" : "password"}
@@ -58,6 +59,11 @@ export function Login() {
           }
           error={error}
         />
+        <div className="row" style={{ justifyContent: "flex-end" }}>
+          <Link className="faint" to="/forgot">
+            Forgot password?
+          </Link>
+        </div>
         <Button type="submit" size="lg" block loading={busy} disabled={!username.trim() || !password}>
           Sign in
         </Button>

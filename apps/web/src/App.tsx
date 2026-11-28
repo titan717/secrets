@@ -11,6 +11,8 @@ import { Shell } from "./routes/Shell";
 import { Welcome } from "./routes/auth/Welcome";
 import { Login } from "./routes/auth/Login";
 import { Signup } from "./routes/auth/Signup";
+import { ForgotPassword, ResetPassword } from "./routes/auth/PasswordReset";
+import { VerifyEmail } from "./routes/auth/VerifyEmail";
 import { ChatsPage } from "./routes/chats/ChatsPage";
 import { HomePage } from "./routes/HomePage";
 import { ComingSoon } from "./routes/ComingSoon";
@@ -45,7 +47,14 @@ function useAppearance() {
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const token = useSession((s) => s.token);
+  const ready = useSession((s) => s.ready);
   const loc = useLocation();
+  if (!ready)
+    return (
+      <div className="page-loading">
+        <Spinner size={22} />
+      </div>
+    );
   if (!token) return <Navigate to="/welcome" replace state={{ from: loc.pathname }} />;
   return children;
 }
@@ -56,6 +65,11 @@ export function App() {
   const navigate = useNavigate();
   const flags = useFlags((s) => s.flags);
   const loadFlags = useFlags((s) => s.load);
+  const restore = useSession((s) => s.restore);
+
+  useEffect(() => {
+    void restore();
+  }, [restore]);
 
   useEffect(() => {
     configureApi({
@@ -92,6 +106,9 @@ export function App() {
           <Route path="/welcome" element={token ? <Navigate to="/chats" replace /> : <Welcome />} />
           <Route path="/login" element={token ? <Navigate to="/chats" replace /> : <Login />} />
           <Route path="/signup" element={token ? <Navigate to="/chats" replace /> : <Signup />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="/verify" element={<VerifyEmail />} />
           <Route
             element={
               <RequireAuth>

@@ -4,7 +4,7 @@ import { db } from "../../db/index.js";
 import { badRequest, conflict, forbidden, notFound, uuid, token, assertId } from "../../lib/http.js";
 import { dockView, dockViews, userView, channelView, USER_COLS } from "../../lib/views.js";
 import { iso } from "../../lib/http.js";
-import { requireAuth } from "../auth/service.js";
+import { requireAuth, assertEmailVerified } from "../auth/service.js";
 import { publish, dockAudience } from "../realtime/bus.js";
 import { HANDLE_RE, normalizeChannelName, getDock, roleIn, visibleDock, requireManager, createChannel } from "./service.js";
 
@@ -83,6 +83,7 @@ export async function dockRoutes(app: FastifyInstance) {
   });
 
   app.post("/v1/docks", async (req, reply) => {
+    await assertEmailVerified(req.auth.id);
     const b = (req.body ?? {}) as any;
     const f = validateDockFields(b, false);
     const handle = typeof b.handle === "string" ? b.handle.trim().toLowerCase().replace(/^@/, "") : "";

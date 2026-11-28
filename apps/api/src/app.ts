@@ -3,12 +3,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
 import websocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import { config } from "./config.js";
 import { db } from "./db/index.js";
 import { HttpError } from "./lib/http.js";
+import { csrfOk } from "./modules/auth/service.js";
 import { redisStatus } from "./modules/realtime/bus.js";
 import { authRoutes } from "./modules/auth/routes.js";
 import { userRoutes } from "./modules/users/routes.js";
@@ -41,14 +43,50 @@ export async function buildApp(): Promise<FastifyInstance> {
     trustProxy: true,
   });
 
+  await app.register(cookie);
   await app.register(cors, {
-    origin: config.corsOrigin.includes("*") ? true : config.corsOrigin,
+    // Same-origin by default (API serves the web build). Never `*` with credentials.
+    origin: config.corsOrigin.includes("*") ? false : config.corsOrigin,
     credentials: true,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["content-type", "authorization", "x-secrets-token"],
   });
   await app.register(multipart, { limits: { fileSize: config.maxUploadBytes, files: 1 } });
   await app.register(websocket, { options: { maxPayload: 256 * 1024 } });
+
+  // Security headers on every response (helmet-equivalent, no extra dependency).
+  app.addHook("onSend", async (_req, reply, payload) => {
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("x-frame-options", "DENY");
+    reply.header("referrer-policy", "strict-origin-when-cross-origin");
+    reply.header("permissions-policy", "camera=(self), microphone=(self), geolocation=()");
+    if (config.isProd) reply.header("strict-transport-security", "max-age=31536000; includeSubDomains");
+    reply.header(
+      "content-security-policy",
+      [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: https:",
+        "media-src 'self' blob: https:",
+        "font-src 'self' data:",
+        "connect-src 'self' https: wss: http://localhost:* ws://localhost:*",
+        "frame-ancestors 'none'",
+        "base-uri 'none'",
+        "object-src 'none'",
+      ].join("; "),
+    );
+    return payload;
+  });
+
+  // CSRF: cookie-authenticated mutations must echo the double-submit token.
+  app.addHook("preHandler", async (req) => {
+    if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return;
+    const hasCookie = !!(req as any).cookies?.[config.sessionCookie];
+    const hasBearer = /^bearer /i.test(String(req.headers.authorization ?? ""));
+    if (!hasCookie || hasBearer) return;
+    if (!csrfOk(req)) throw new HttpError(403, "csrf_failed", "Security token missing or expired. Refresh and try again.");
+  });
 
   app.setErrorHandler((err: any, req, reply) => {
     if (err instanceof HttpError && (err as any).retryAfter) reply.header("retry-after", String((err as any).retryAfter));

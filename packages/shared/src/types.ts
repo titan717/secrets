@@ -7,6 +7,12 @@ export interface User {
   about: string;
   avatar_url: string | null;
   accent: string | null;
+  /** Presence note (<= 80 chars). */
+  status?: string | null;
+  profile_visibility?: "public" | "contacts" | "private";
+  /** Owner-only. */
+  email?: string | null;
+  email_verified?: boolean;
   created_at: string;
 }
 
@@ -14,6 +20,8 @@ export interface Session {
   token: string;
   user: User;
   device_id: string;
+  /** Double-submit CSRF token; also set as a readable cookie. */
+  csrf_token?: string;
 }
 
 export type ConversationKind = "dm" | "group" | "channel";

@@ -30,6 +30,8 @@
 .user-menu .is-danger { color: var(--danger); }
 
 .mobile-nav { display: none; }
+.verify-banner { display: flex; align-items: center; gap: 10px; font-size: var(--text-xs); padding: 8px 14px; background: color-mix(in oklab, var(--accent) 14%, var(--surface-1)); color: var(--text); border-bottom: 1px solid var(--border); }
+.verify-banner .chip { cursor: pointer; }
 .conn-banner { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: var(--text-xs); font-weight: 500; padding: 6px 12px; background: color-mix(in oklab, var(--warning) 18%, var(--surface-1)); color: color-mix(in oklab, var(--warning) 70%, var(--text)); }
 
 @media (max-width: 860px) {

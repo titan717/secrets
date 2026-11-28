@@ -26,6 +26,7 @@ export function Signup() {
   const [username, setUsername] = useState("");
   const [avail, setAvail] = useState<Avail>("idle");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
@@ -50,14 +51,15 @@ export function Signup() {
     return () => clearTimeout(t);
   }, [username]);
 
-  const pwOk = password.length >= 8;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const pwOk = password.length >= 10;
   const pwMatch = password === confirm;
 
   const create = async () => {
     setBusy(true);
     setError(null);
     try {
-      const s = await api("POST /v1/auth/signup", { body: { username, password, display_name: name.trim() || username } });
+      const s = await api("POST /v1/auth/signup", { body: { username, email: email.trim(), password, display_name: name.trim() || username } });
       setSession(s);
       nav("/chats", { replace: true });
     } catch (e) {
@@ -173,8 +175,18 @@ export function Signup() {
               if (pwOk && pwMatch) void create();
             }}
           >
-            <h2 className="auth-title">Set a password</h2>
-            <p className="muted auth-sub">At least 8 characters. There’s no email reset in this preview, so keep it somewhere safe.</p>
+            <h2 className="auth-title">Secure your account</h2>
+            <p className="muted auth-sub">We use your email only for verification and password recovery. It’s never shown to other people.</p>
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              error={email && !emailOk ? "Enter a valid email address" : undefined}
+            />
             <Input
               label="Password"
               type={show ? "text" : "password"}
@@ -187,14 +199,14 @@ export function Signup() {
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               }
-              hint={password && !pwOk ? "Needs at least 8 characters" : undefined}
+              hint={password && !pwOk ? "Needs at least 10 characters" : undefined}
             />
             <Input label="Confirm password" type={show ? "text" : "password"} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" error={confirm && !pwMatch ? "Passwords don’t match" : error} />
             <div className="signup-summary">
               <span className="faint">Creating</span> <strong>{name.trim()}</strong> <span className="faint">as</span> <strong>@{username}</strong>
             </div>
             <div className="auth-spacer" />
-            <Button type="submit" size="lg" block loading={busy} disabled={!pwOk || !pwMatch}>
+            <Button type="submit" size="lg" block loading={busy} disabled={!emailOk || !pwOk || !pwMatch}>
               Create account
             </Button>
           </form>

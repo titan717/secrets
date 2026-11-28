@@ -19,7 +19,7 @@ beforeAll(async () => {
   process.env.PGLITE_DIR = dir;
   process.env.JWT_SECRET = "test-secret-do-not-use-in-prod";
   process.env.NODE_ENV = "test";
-  process.env.LOG_LEVEL = "silent";
+  process.env.LOG_LEVEL = "error";
 
   const dbmod = await import("../src/db/index.js");
   const { migrate } = await import("../src/db/migrations.js");
@@ -41,11 +41,11 @@ afterAll(async () => {
   if (dir) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-async function call(method: string, url: string, opts: { token?: string; body?: unknown } = {}) {
+async function callRaw(method: string, url: string, opts: { token?: string; body?: unknown; headers?: Record<string, string> } = {}) {
   const res = await app.inject({
     method: method as any,
     url,
-    headers: opts.token ? { authorization: `Bearer ${opts.token}` } : {},
+    headers: { ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}), ...(opts.headers ?? {}) },
     payload: opts.body as any,
   });
   let body: any;
@@ -54,13 +54,19 @@ async function call(method: string, url: string, opts: { token?: string; body?: 
   } catch {
     body = res.body;
   }
-  return { status: res.statusCode, body };
+  const cookies = Object.fromEntries((res.cookies ?? []).map((c: any) => [c.name, c.value]));
+  return { status: res.statusCode, body, cookies, headers: res.headers };
+}
+
+async function call(method: string, url: string, opts: { token?: string; body?: unknown; headers?: Record<string, string> } = {}) {
+  const { status, body } = await callRaw(method, url, opts);
+  return { status, body };
 }
 
 let seq = 0;
 async function signup(prefix: string, password = "correct-horse-1") {
   const username = `${prefix}${++seq}`;
-  const r = await call("POST", "/v1/auth/signup", { body: { username, password, display_name: username } });
+  const r = await call("POST", "/v1/auth/signup", { body: { username, email: `${username}@example.test`, password, display_name: username } });
   expect(r.status).toBe(201);
   return { ...r.body, username, password };
 }
@@ -89,9 +95,9 @@ describe("auth", () => {
 
   it("rejects duplicate usernames case-insensitively", async () => {
     const a = await signup("case");
-    const dup = await call("POST", "/v1/auth/signup", { body: { username: a.username.toUpperCase(), password: "correct-horse-1" } });
+    const dup = await call("POST", "/v1/auth/signup", { body: { username: a.username.toUpperCase(), email: `dup-${a.username}@example.test`, password: "correct-horse-1" } });
     expect(dup.status).toBe(409);
-    expect(dup.body.error).toBe("username_taken");
+    expect(dup.body.error).toBe("signup_failed");
   });
 
   it("requires a valid session for protected routes", async () => {
@@ -178,5 +184,81 @@ describe("docks", () => {
 
     expect((await call("GET", `/v1/conversations/${channelId}/messages`, { token: owner.token })).status).toBe(200);
     expect((await call("POST", `/v1/conversations/${channelId}/messages`, { token: owner.token, body: envelope("hello dock") })).status).toBe(201);
+  });
+});
+
+describe("auth hardening", () => {
+  it("authenticates with an httpOnly session cookie", async () => {
+    const a = await signup("cookie");
+    const login = await callRaw("POST", "/v1/auth/login", { body: { username: a.username, password: a.password } });
+    expect(login.status).toBe(200);
+    const sid = login.cookies["secrets_session"];
+    expect(sid).toBeTruthy();
+
+    const me = await callRaw("GET", "/v1/me", { headers: { cookie: `secrets_session=${sid}` } });
+    expect(me.status).toBe(200);
+    expect(me.body.username).toBe(a.username);
+  });
+
+  it("rejects cookie-authenticated mutations without a CSRF token", async () => {
+    const a = await signup("csrf");
+    const login = await callRaw("POST", "/v1/auth/login", { body: { username: a.username, password: a.password } });
+    const cookie = `secrets_session=${login.cookies["secrets_session"]}; secrets_csrf=${login.cookies["secrets_csrf"]}`;
+
+    const blocked = await callRaw("PATCH", "/v1/me", { body: { status: "hi" }, headers: { cookie } });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error).toBe("csrf_failed");
+
+    const ok = await callRaw("PATCH", "/v1/me", {
+      body: { status: "hi" },
+      headers: { cookie, "x-csrf-token": login.cookies["secrets_csrf"] },
+    });
+    expect(ok.status).toBe(200);
+    expect(ok.body.status).toBe("hi");
+  });
+
+  it("resets a password with a single-use token and revokes every session", async () => {
+    const a = await signup("reset");
+    const forgot = await callRaw("POST", "/v1/auth/forgot-password", { body: { email: `${a.username}@example.test` } });
+    expect(forgot.status).toBe(202);
+    const token = forgot.body.dev_token;
+    expect(token).toBeTruthy();
+
+    expect((await call("POST", "/v1/auth/reset-password", { body: { token, password: "brand-new-password-1" } })).status).toBe(200);
+    expect((await call("GET", "/v1/me", { token: a.token })).status).toBe(401);
+    expect((await call("POST", "/v1/auth/login", { body: { username: a.username, password: a.password } })).status).toBe(401);
+    expect((await call("POST", "/v1/auth/login", { body: { username: a.username, password: "brand-new-password-1" } })).status).toBe(200);
+    // single use
+    expect((await call("POST", "/v1/auth/reset-password", { body: { token, password: "another-password-1" } })).status).toBe(400);
+  });
+
+  it("changes a password and keeps only the current device signed in", async () => {
+    const a = await signup("change");
+    const second = await callRaw("POST", "/v1/auth/login", { body: { username: a.username, password: a.password } });
+    const t2 = second.body.token;
+
+    const changed = await call("POST", "/v1/auth/change-password", {
+      token: t2,
+      body: { current_password: a.password, new_password: "changed-password-1" },
+    });
+    expect(changed.status).toBe(200);
+    expect((await call("GET", "/v1/me", { token: a.token })).status).toBe(401);
+    expect((await call("GET", "/v1/me", { token: t2 })).status).toBe(200);
+  });
+
+  it("deletes an account and invalidates access", async () => {
+    const a = await signup("deleted");
+    expect((await call("DELETE", "/v1/me", { token: a.token, body: { password: "wrong-password" } })).status).toBe(401);
+    expect((await call("DELETE", "/v1/me", { token: a.token, body: { password: a.password } })).status).toBe(200);
+    expect((await call("GET", "/v1/me", { token: a.token })).status).toBe(401);
+    expect((await call("POST", "/v1/auth/login", { body: { username: a.username, password: a.password } })).status).toBe(401);
+  });
+
+  it("exports account data as a JSON attachment", async () => {
+    const a = await signup("exporter");
+    const res = await callRaw("POST", "/v1/me/export", { token: a.token, body: {} });
+    expect(res.status).toBe(200);
+    expect(String(res.headers["content-disposition"])).toContain("attachment");
+    expect(res.body.profile.username).toBe(a.username);
   });
 });

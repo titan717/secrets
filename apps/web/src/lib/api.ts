@@ -65,6 +65,11 @@ async function request(method: string, rawPath: string, opts: RawOpts): Promise<
   const headers: Record<string, string> = {};
   const token = tokenGetter();
   if (token) headers.Authorization = `Bearer ${token}`;
+  // Double-submit CSRF token (readable cookie) for cookie-authenticated mutations.
+  if (method !== "GET" && method !== "HEAD") {
+    const csrf = document.cookie.match(/(?:^|;\s*)secrets_csrf=([^;]+)/)?.[1];
+    if (csrf) headers["x-csrf-token"] = decodeURIComponent(csrf);
+  }
   let body: BodyInit | undefined;
   if (opts.body instanceof FormData) body = opts.body;
   else if (opts.body !== undefined && method !== "GET") {
@@ -73,7 +78,7 @@ async function request(method: string, rawPath: string, opts: RawOpts): Promise<
   }
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, { method, headers, body, signal: opts.signal });
+    res = await fetch(`${API_URL}${path}`, { method, headers, body, signal: opts.signal, credentials: "include" });
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
     throw new HttpError(0, "network", "Can't reach Secrets right now. Check your connection.");

@@ -77,6 +77,31 @@ export function useLogout() {
   };
 }
 
+function VerifyBanner() {
+  const user = useSession((s) => s.user);
+  const flags = useFlags((s) => s.flags);
+  const [sent, setSent] = useState(false);
+  if (!flags.emailVerification || !user || user.email_verified !== false) return null;
+  return (
+    <div className="verify-banner" role="status">
+      <span className="grow">Verify your email to start new conversations and create Docks.</span>
+      <button
+        className="chip"
+        onClick={async () => {
+          try {
+            await api("POST /v1/auth/resend-verification", { body: {} });
+            setSent(true);
+          } catch {
+            /* surfaced by the toast layer elsewhere */
+          }
+        }}
+      >
+        {sent ? "Email sent" : "Resend email"}
+      </button>
+    </div>
+  );
+}
+
 function Sidebar() {
   const unread = useUnreadTotal();
   const openAi = useUi((s) => s.setAiOpen);
@@ -190,6 +215,7 @@ export function Shell() {
       <Sidebar />
       <div className="shell-main">
         <ConnectionBanner />
+        <VerifyBanner />
         <Outlet />
       </div>
       <MobileNav onPlus={() => setPlus(true)} />

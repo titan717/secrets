@@ -7,7 +7,7 @@
 Privacy-first, all-in-one communication platform. MVP pillars: **Messaging, Docks, Calls, AI** —
 dark-first, username-first, free-first, for desktop and mobile web.
 
-> Status: Phase 1 complete (consolidation, tests, CI, flags). Phase 2 next: auth hardening.
+> Status: Phases 0–2 complete (consolidation, tests, CI, flags, auth hardening). Phase 3 next: messaging.
 > See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 This repository is the consolidated monorepo. It absorbs the split prototype repos

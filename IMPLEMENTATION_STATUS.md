@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated: 2026-11-27 · Phase: **2 next** (Phase 1 complete)
+Updated: 2026-11-28 · Phase: **3 next** (Phases 0–2 complete)
 
 Legend: ✅ done · 🟡 in progress · ⬜ pending · ⏸ blocked on a decision
+
+## Phase 2 — Auth hardening ✅
+
+| Item | Evidence |
+| --- | --- |
+| httpOnly session cookie (`secrets_session`, `__Host-` in prod) + CSRF double-submit | `auth/service.ts`, `setSessionCookies`, `csrfOk`; tested |
+| Token removed from localStorage; memory-only + cookie restore | `stores/session.ts`, `GET /v1/auth/session` |
+| Email required at signup; verification tokens (hashed, 24 h) | migration `008_auth_hardening`, `/v1/auth/verify-email` |
+| Password reset: single-use 30 min token, revokes all sessions | `/v1/auth/forgot-password`, `/v1/auth/reset-password`; tested |
+| Change password revokes other devices | `/v1/auth/change-password`; tested |
+| Account deletion (password-confirmed) + JSON export | `DELETE /v1/me`, `POST /v1/me/export`; tested |
+| bcrypt cost 12, generic signup errors (no email enumeration) | `hashPassword`, `signup_failed` |
+| Security headers: CSP, HSTS, nosniff, frame-deny, permissions-policy | `app.ts` onSend hook |
+| CSRF enforced for cookie-authenticated mutations | 403 `csrf_failed`; tested |
+| Audit log for auth, sessions, deletion, export | `audit_logs` table |
+| UI: email step, forgot/reset/verify pages, verification banner | `routes/auth/*`, `VerifyBanner` |
+| 14 backend integration tests (6 new) | `pnpm test` |
 
 ## Phase 1 — Consolidation & safety net ✅
 
@@ -41,7 +58,6 @@ pnpm build:services ✅ ai + calls
 
 | Phase | Scope | Est. |
 | --- | --- | --- |
-| 2 | Auth hardening (cookie sessions, verify, reset, delete/export) | 4–6 d |
 | 3 | Messaging hardening (R2 uploads, blocks/mutes, notifications, global search) | 5–7 d |
 | 4 | Docks (invites, moderation, audit, permission tests) | 3–4 d |
 | 5 | Calls (fail-closed membership, group limits, reconnect) | 2–3 d |
@@ -60,7 +76,7 @@ D8 experimental modules hidden · D9 approval for every AI write · D10 calls fa
 
 | Risk | Mitigation |
 | --- | --- |
-| Session still in localStorage | fixed in Phase 2 (D2) — highest-severity finding |
+| ~~Session in localStorage~~ | fixed in Phase 2: httpOnly cookie + CSRF |
 | Calls service membership fail-open | fixed in Phase 5 (D10) |
 | ~2 000 LOC with only 8 backend tests | test suite grows every phase; authorization is the first target |
 | Android dev environment (no Docker/Postgres) | PGlite + in-process bus; CI uses real Postgres |

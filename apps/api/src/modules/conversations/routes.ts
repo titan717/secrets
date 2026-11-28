@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/index.js";
 import { badRequest, forbidden, notFound, uuid, isUuid, assertId } from "../../lib/http.js";
 import { conversationView, conversationViews } from "../../lib/views.js";
-import { requireAuth } from "../auth/service.js";
+import { requireAuth, assertEmailVerified } from "../auth/service.js";
 import { publish, conversationAudience } from "../realtime/bus.js";
 import { access, memberIds, pushConversation } from "./service.js";
 import { markRead } from "../messages/service.js";
@@ -46,6 +46,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   });
 
   app.post("/v1/conversations/dm", async (req, reply) => {
+    await assertEmailVerified(req.auth.id);
     const other = (req.body as any)?.user_id;
     if (!isUuid(other)) throw badRequest("user_id is required");
     if (other === req.auth.id) throw badRequest("You can't start a DM with yourself");
@@ -74,6 +75,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   });
 
   app.post("/v1/conversations/group", async (req, reply) => {
+    await assertEmailVerified(req.auth.id);
     const b = (req.body ?? {}) as any;
     const title = typeof b.title === "string" ? b.title.trim() : "";
     if (!title || title.length > 64) throw badRequest("title must be 1-64 characters");

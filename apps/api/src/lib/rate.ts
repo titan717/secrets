@@ -21,3 +21,4 @@ export function limiter(max: number, windowMs: number) {
 
 export const authLimit = limiter(20, 60_000); // per IP: signup/login attempts per minute
 export const sendLimit = limiter(30, 10_000); // per user: messages per 10s
+export const resetLimit = limiter(5, 3_600_000); // per account/IP: reset + verification emails per hour

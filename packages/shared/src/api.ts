@@ -6,13 +6,25 @@ import type { Conversation, Dock, DockMember, DockRole, DockVisibility, MessageV
 import type { MessageEnvelope, Attachment } from "./envelope";
 
 export interface Routes {
-  "POST /v1/auth/signup": { body: { username: string; password: string; display_name?: string }; res: Session };
+  "POST /v1/auth/signup": { body: { username: string; email: string; password: string; display_name?: string }; res: Session };
   "POST /v1/auth/login": { body: { username: string; password: string }; res: Session };
   "POST /v1/auth/logout": { body: {}; res: { ok: true } };
+  "GET /v1/auth/session": { res: { user: User; device_id: string; token: string } };
   "GET /v1/auth/username-available": { query: { username: string }; res: { available: boolean } };
+  "POST /v1/auth/verify-email": { body: { token: string }; res: { ok: true; verified: boolean } };
+  "POST /v1/auth/resend-verification": { body: {}; res: { ok: true; already?: boolean; dev_token?: string } };
+  "POST /v1/auth/forgot-password": { body: { email: string }; res: { ok: true; dev_token?: string } };
+  "POST /v1/auth/reset-password": { body: { token: string; password: string }; res: { ok: true; revoked_all: boolean } };
+  "POST /v1/auth/change-password": { body: { current_password: string; new_password: string }; res: { ok: true } };
+  "POST /v1/auth/service-token": { res: { token: string; expires_in: number } };
 
   "GET /v1/me": { res: User };
-  "PATCH /v1/me": { body: Partial<Pick<User, "display_name" | "about" | "avatar_url" | "accent">>; res: User };
+  "PATCH /v1/me": {
+    body: Partial<Pick<User, "display_name" | "about" | "avatar_url" | "accent" | "status" | "profile_visibility">>;
+    res: User;
+  };
+  "DELETE /v1/me": { body: { password: string }; res: { ok: true } };
+  "POST /v1/me/export": { body: {}; res: unknown };
   "GET /v1/users/search": { query: { q: string }; res: User[] };
   "GET /v1/users/:username": { res: User };
 

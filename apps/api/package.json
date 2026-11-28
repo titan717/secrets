@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.16",
+    "@fastify/cookie": "^11.1.5",
     "@fastify/cors": "^11.0.0",
     "@fastify/multipart": "^10.1.0",
     "@fastify/static": "^11.0.0",

@@ -3,7 +3,8 @@ import type { Queryable } from "../db/index.js";
 import { db } from "../db/index.js";
 import { iso } from "./http.js";
 
-export const USER_COLS = "u.id, u.username, u.display_name, u.about, u.avatar_url, u.accent, u.created_at";
+export const USER_COLS =
+  "u.id, u.username, u.display_name, u.about, u.avatar_url, u.accent, u.created_at, u.status, u.profile_visibility, u.email, u.email_verified_at, u.deleted_at";
 
 export function userView(r: any): User {
   return {
@@ -13,8 +14,15 @@ export function userView(r: any): User {
     about: r.about ?? "",
     avatar_url: r.avatar_url ?? null,
     accent: r.accent ?? null,
+    status: r.status ?? null,
+    profile_visibility: r.profile_visibility ?? "public",
     created_at: iso(r.created_at),
   };
+}
+
+/** Owner-only view: adds private fields (email, verification state). */
+export function selfView(r: any): User {
+  return { ...userView(r), email: r.email ?? null, email_verified: !!r.email_verified_at };
 }
 
 export const MSG_COLS =

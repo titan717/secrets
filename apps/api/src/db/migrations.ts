@@ -242,6 +242,53 @@ CREATE TABLE IF NOT EXISTS vault_items (
 CREATE INDEX IF NOT EXISTS vault_items_user_idx ON vault_items(user_id, created_at DESC);
 `,
   },
+  {
+    id: "008_auth_hardening",
+    sql: `
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_visibility text NOT NULL DEFAULT 'public';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_key ON users (lower(email)) WHERE email IS NOT NULL AND deleted_at IS NULL;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+UPDATE sessions SET expires_at = created_at + interval '90 days' WHERE expires_at IS NULL;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_hash text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS revoked_reason text;
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  id uuid PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind text NOT NULL CHECK (kind IN ('verify_email','reset_password')),
+  token_hash text NOT NULL,
+  expires_at timestamptz NOT NULL,
+  used_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS auth_tokens_hash_key ON auth_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS auth_tokens_user_idx ON auth_tokens (user_id, kind, created_at DESC);
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id bigserial PRIMARY KEY,
+  actor_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  action text NOT NULL,
+  target_type text,
+  target_id uuid,
+  ip_hash text,
+  user_agent text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS audit_actor_idx ON audit_logs (actor_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS audit_action_idx ON audit_logs (action, created_at DESC);
+CREATE TABLE IF NOT EXISTS blocks (
+  blocker_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (blocker_id, blocked_id),
+  CHECK (blocker_id <> blocked_id)
+);
+`,
+  },
 ];
 
 export async function migrate(db: Db, log: (m: string) => void): Promise<void> {
