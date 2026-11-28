@@ -1,7 +1,7 @@
 {
   "name": "secrets",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Secrets — Your world. Your people. Your space. A private messaging and community app.",
   "packageManager": "pnpm@12.22.0",

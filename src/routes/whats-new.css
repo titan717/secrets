@@ -1,0 +1,22 @@
+/* What's new — blueprint p33–37 (dp @360). Always dark, like the blueprint. */
+.wn-screen { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 100dvh; background: #000; color: #fff; }
+.wn-scroll { position: relative; flex: 1; overflow-y: auto; padding-bottom: 24px; }
+.wn-x { position: absolute; top: 14px; left: 10px; z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; color: #fff; border-radius: 999px; }
+.wn-x svg { width: 20px; height: 20px; }
+.wn-x:focus-visible, .wn-continue:focus-visible { outline: 2px solid #8f7bff; outline-offset: 3px; }
+.wn-hero { position: relative; height: 220px; overflow: hidden; background: #000; }
+.wn-hero img { position: absolute; right: -6px; top: 34px; width: 190px; height: 190px; object-fit: contain; mix-blend-mode: screen; }
+.wn-hero span { position: absolute; left: 22px; top: 84px; font-size: 34px; font-weight: 800; letter-spacing: -0.01em; line-height: 1; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6); }
+.wn-body { max-width: 640px; padding: 28px 20px 0; }
+.wn-ver { font-size: 13px; color: #4f4f4f; margin: 0 0 4px; }
+.wn-body h1 { font-size: 28px; font-weight: 700; line-height: 1.15; margin: 0; }
+.wn-sum { font-size: 14px; color: #4f4f4f; margin: 10px 0 0; line-height: 1.4; }
+.wn-body section { margin-top: 34px; }
+.wn-body h2 { font-size: 18.5px; font-weight: 700; margin: 0 0 14px; }
+.wn-item { margin-bottom: 20px; }
+.wn-body h3 { font-size: 15.5px; font-weight: 700; margin: 0 0 4px; }
+.wn-item p { font-size: 14.5px; line-height: 1.42; margin: 0; color: #fff; }
+.wn-item p.dim { color: #4f4f4f; }
+.wn-foot { position: sticky; bottom: 0; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, #000 70%, rgba(0, 0, 0, 0)); }
+.wn-continue { display: block; width: 100%; max-width: 600px; height: 52px; border-radius: 999px; background: #fff; color: #000; font-size: 16px; font-weight: 700; }
+@media (min-width: 861px) { .wn-body, .wn-foot { margin: 0 auto; } .wn-body { width: 100%; } .wn-foot { width: 100%; max-width: 680px; } .wn-hero { max-width: 680px; margin: 0 auto; } }

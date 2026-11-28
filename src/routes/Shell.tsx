@@ -11,6 +11,8 @@ import { api, apiRaw } from "../lib/api";
 import { NewChatModal } from "./chats/NewChatModal";
 import { AiDrawer } from "./ai/AiDrawer";
 import { useUi } from "../stores/ui";
+import { useSettings } from "../stores/settings";
+import { APP_VERSION } from "../lib/version";
 import { useFlags } from "../lib/flags";
 
 const PRIMARY = [
@@ -253,6 +255,12 @@ export function Shell() {
   // Settings subpages, share and what's-new are full-screen on mobile (blueprint p1, p4–p16, p33).
   const atChats = /^\/(chats|home)\/?$/.test(loc.pathname);
   const hideNav = /^\/settings\/.+/.test(loc.pathname) || /^\/(share|whats-new)/.test(loc.pathname);
+  // What's new opens once after an update; brand-new accounts start on the current version.
+  const seen = useSettings((s) => s.whatsNewSeen);
+  useEffect(() => {
+    if (seen === null) useSettings.getState().set({ whatsNewSeen: APP_VERSION });
+    else if (seen !== APP_VERSION && !loc.pathname.startsWith("/whats-new")) nav("/whats-new");
+  }, [seen, loc.pathname, nav]);
   return (
     <div className="shell">
       <Sidebar />

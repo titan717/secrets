@@ -66,4 +66,4 @@ export const LANGUAGES: { id: string; native: string; name: string; enabled?: bo
   { id: "ur", native: "اردو", name: "Urdu" },
 ];
 
-export const APP_VERSION = "0.2.0";
+export { APP_VERSION } from "../../lib/version";
