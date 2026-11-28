@@ -1,41 +1,147 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Eye, EyeOff, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { CalendarDays, ChevronDown } from "lucide-react";
+import { create } from "zustand";
 import { api, errorMessage } from "../../lib/api";
 import { useSession } from "../../stores/session";
-import { Button, IconButton, Input, Spinner } from "../../ui";
-import { AuthLayout } from "./AuthLayout";
+import { useSettings } from "../../stores/settings";
+import { DatePickerDialog, ObScreen, fromIso, longDate } from "./ob";
 
 const USERNAME_RE = /^[a-z0-9_.]{3,24}$/;
+const MIN_AGE = 13;
 type Avail = "idle" | "invalid" | "checking" | "available" | "taken" | "error";
 
-function normalize(v: string) {
-  return v.toLowerCase().replace(/^@/, "").replace(/[^a-z0-9_.]/g, "");
+/** In-progress sign-up (kept in memory across the three steps). */
+export const useSignupDraft = create<{ name: string; birthday: string | null; username: string; set: (p: Partial<{ name: string; birthday: string | null; username: string }>) => void; reset: () => void }>((set) => ({
+  name: "",
+  birthday: null,
+  username: "",
+  set: (p) => set(p),
+  reset: () => set({ name: "", birthday: null, username: "" }),
+}));
+
+export const normalizeUsername = (v: string) => v.toLowerCase().replace(/^@/, "").replace(/\s+/g, "").replace(/[^a-z0-9_.]/g, "").slice(0, 24);
+
+/** Username ideas from the name: first name, then first name + 4 digits (p38). */
+export function usernameIdeas(name: string, current: string, rand = Math.random): string[] {
+  const first = normalizeUsername(name.split(/\s+/)[0] ?? "") || normalizeUsername(current) || "secret";
+  const base = first.length >= 3 ? first.slice(0, 18) : `${first}_me`;
+  const n = () => String(Math.floor(rand() * 9000 + 1000));
+  return [...new Set([base, `${base}${n()}`, `${base}${n()}`, `${base}.${n()}`])].filter((s) => s !== current && USERNAME_RE.test(s));
 }
 
-function suggestions(base: string): string[] {
-  const b = base.replace(/[._]+$/, "").slice(0, 18) || "secret";
-  const n = () => Math.floor(Math.random() * 900 + 100);
-  return [`${b}_${n()}`, `${b}${new Date().getFullYear() % 100}`, `the.${b}`];
+export function ageOn(birthday: string, today = new Date()) {
+  const b = fromIso(birthday);
+  let a = today.getFullYear() - b.getFullYear();
+  if (today.getMonth() < b.getMonth() || (today.getMonth() === b.getMonth() && today.getDate() < b.getDate())) a--;
+  return a;
 }
 
-export function Signup() {
+function NameStep() {
+  const nav = useNavigate();
+  const { name, set } = useSignupDraft();
+  const ref = useRef<HTMLInputElement>(null);
+  const next = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return ref.current?.focus();
+    nav("/signup/birthday");
+  };
+  return (
+    <form onSubmit={next} className="contents">
+      <ObScreen
+        label="What's your name?"
+        onBack={() => nav("/welcome")}
+        foot={
+          <button type="submit" className="ob-pill">
+            Next
+          </button>
+        }
+      >
+        <h1 className="ob-title">What&apos;s your name?</h1>
+        <p className="ob-sub">This is how people will see you. You can change it any time.</p>
+        <label className="ob-line">
+          <input ref={ref} value={name} onChange={(e) => set({ name: e.target.value })} placeholder="Your name" autoComplete="name" aria-label="Your name" maxLength={48} autoFocus />
+        </label>
+      </ObScreen>
+    </form>
+  );
+}
+
+function BirthdayStep() {
+  const nav = useNavigate();
+  const { name, birthday, set } = useSignupDraft();
+  const [open, setOpen] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!name.trim()) nav("/signup", { replace: true });
+  }, [name, nav]);
+  const next = () => {
+    if (!birthday) return setOpen(true);
+    if (ageOn(birthday) < MIN_AGE) return setErr(`You need to be at least ${MIN_AGE} to use Secrets.`);
+    nav("/signup/username");
+  };
+  return (
+    <ObScreen
+      label="When's your birthday?"
+      onBack={() => nav("/signup")}
+      foot={
+        <button type="button" className="ob-pill" onClick={next}>
+          Next
+        </button>
+      }
+    >
+      <h1 className="ob-title">When&apos;s your birthday?</h1>
+      <p className="ob-sub">It won&apos;t be on your profile. Enter your own age, even if this account is for a business or a pet.</p>
+      <p className="ob-label" id="ob-dob">
+        Date of Birth *
+      </p>
+      <button type="button" className="ob-date" aria-labelledby="ob-dob ob-dob-v" onClick={() => setOpen(true)}>
+        <CalendarDays aria-hidden />
+        <span id="ob-dob-v">{birthday ? longDate(birthday) : "Choose your date of birth"}</span>
+        <ChevronDown aria-hidden />
+      </button>
+      <p className={`ob-note ${err ? "bad" : ""}`} role={err ? "alert" : undefined}>
+        {err ?? "This is private and cannot be changed after it is saved."}
+      </p>
+      <DatePickerDialog
+        open={open}
+        value={birthday}
+        max={new Date()}
+        onCancel={() => setOpen(false)}
+        onOk={(v) => {
+          set({ birthday: v });
+          setErr(null);
+          setOpen(false);
+        }}
+      />
+    </ObScreen>
+  );
+}
+
+function UsernameStep() {
   const nav = useNavigate();
   const setSession = useSession((s) => s.setSession);
-  const [step, setStep] = useState(0);
-  const [username, setUsername] = useState("");
+  const { name, birthday, username, set, reset } = useSignupDraft();
   const [avail, setAvail] = useState<Avail>("idle");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [show, setShow] = useState(false);
+  const [ideas, setIdeas] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reqId = useRef(0);
-  const sugg = useMemo(() => suggestions(username || "secret"), [avail === "taken"]); // eslint-disable-line
+  const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!name.trim() || !birthday) nav("/signup", { replace: true });
+  }, [name, birthday, nav]);
+
+  // Prefill from the name the first time.
+  useEffect(() => {
+    if (!username && name) set({ username: normalizeUsername(name.split(/\s+/)[0] ?? "") });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Live availability (debounced).
+  useEffect(() => {
+    setError(null);
     if (!username) return setAvail("idle");
     if (!USERNAME_RE.test(username)) return setAvail("invalid");
     setAvail("checking");
@@ -47,171 +153,101 @@ export function Signup() {
       } catch {
         if (id === reqId.current) setAvail("error");
       }
-    }, 350);
+    }, 300);
     return () => clearTimeout(t);
   }, [username]);
 
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
-  const pwOk = password.length >= 10;
-  const pwMatch = password === confirm;
+  // Suggestions: only ones that are free.
+  useEffect(() => {
+    let live = true;
+    const cands = usernameIdeas(name, username);
+    Promise.all(cands.map((u) => api("GET /v1/auth/username-available", { query: { username: u } }).then((r) => (r.available ? u : null)).catch(() => null))).then((r) => {
+      if (live) setIdeas(r.filter((x): x is string => !!x).slice(0, 3));
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, avail === "taken"]);
 
-  const create = async () => {
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!(avail === "available" || avail === "error")) return ref.current?.focus();
     setBusy(true);
-    setError(null);
     try {
-      const s = await api("POST /v1/auth/signup", { body: { username, email: email.trim(), password, display_name: name.trim() || username } });
+      const s = await api("POST /v1/auth/signup", { body: { username, display_name: name.trim(), birthday: birthday ?? undefined } });
+      // Brand-new accounts see the first-run tour, not What's new.
+      useSettings.getState().set({ whatsNewSeen: null });
       setSession(s);
+      reset();
       nav("/chats", { replace: true });
-    } catch (e) {
-      setError(errorMessage(e));
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
   };
 
-  const back = () => (step === 0 ? nav("/welcome") : setStep(step - 1));
-
-  const availLine = {
-    idle: <span className="faint">3–24 characters: letters, numbers, dots and underscores.</span>,
-    invalid: <span className="avail avail-bad">Use 3–24 letters, numbers, dots or underscores.</span>,
-    checking: (
-      <span className="avail faint">
-        <Spinner size={12} /> Checking…
-      </span>
-    ),
-    available: (
-      <span className="avail avail-ok">
-        <Check size={14} /> @{username} is available.
-      </span>
-    ),
-    taken: (
-      <span className="avail avail-bad">
-        <X size={14} /> @{username} is taken.
-      </span>
-    ),
-    error: <span className="avail faint">Couldn’t check right now — you can still try.</span>,
-  }[avail];
+  const hint =
+    error ??
+    {
+      idle: "Use 3–24 letters, numbers, dots or underscores.",
+      invalid: "Use 3–24 letters, numbers, dots or underscores.",
+      checking: "Checking…",
+      available: `@${username} is available.`,
+      taken: `@${username} is taken.`,
+      error: "Couldn't check right now. You can still try.",
+    }[avail];
 
   return (
-    <AuthLayout>
-      <div className="auth-card auth-form">
-        <div className="auth-top">
-          <IconButton label="Back" onClick={back}>
-            <ArrowLeft size={20} />
-          </IconButton>
-          <div className="steps" aria-label={`Step ${step + 1} of 3`}>
-            {[0, 1, 2].map((i) => (
-              <span key={i} className={`step-dot ${i <= step ? "is-on" : ""}`} />
+    <form onSubmit={submit} className="contents">
+      <ObScreen
+        label="Pick a username"
+        onBack={() => nav("/signup/birthday")}
+        foot={
+          <button type="submit" className={`ob-pill ${busy ? "busy" : ""}`} disabled={busy}>
+            Create account
+          </button>
+        }
+      >
+        <h1 className="ob-title">Pick a username</h1>
+        <p className="ob-sub">It&apos;s how people find you. You can change it later.</p>
+        <label className="ob-line">
+          <span aria-hidden>@</span>
+          <input
+            ref={ref}
+            value={username}
+            onChange={(e) => set({ username: normalizeUsername(e.target.value) })}
+            aria-label="Username"
+            aria-describedby="ob-avail"
+            autoCapitalize="none"
+            autoComplete="username"
+            spellCheck={false}
+            maxLength={24}
+            autoFocus
+          />
+        </label>
+        <p id="ob-avail" className={`ob-hint ${error || avail === "taken" || avail === "invalid" ? "bad" : ""}`} aria-live="polite">
+          {hint}
+        </p>
+        {ideas.some((s) => s !== username) && (
+          <div className="ob-chips" aria-label="Suggestions">
+            {ideas.filter((s) => s !== username).map((s) => (
+              <button type="button" key={s} onClick={() => set({ username: s })}>
+                @{s}
+              </button>
             ))}
           </div>
-        </div>
-
-        {step === 0 && (
-          <form
-            className="col auth-step"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (avail === "available" || avail === "error") setStep(1);
-            }}
-          >
-            <h2 className="auth-title">Pick a username</h2>
-            <p className="muted auth-sub">It’s how people find you on Secrets. You can share it as a link or QR code.</p>
-            <Input
-              variant="line"
-              leading={<span className="at">@</span>}
-              value={username}
-              onChange={(e) => setUsername(normalize(e.target.value))}
-              placeholder="username"
-              autoCapitalize="none"
-              autoComplete="username"
-              spellCheck={false}
-              autoFocus
-              aria-label="Username"
-              maxLength={24}
-              hint={availLine}
-            />
-            {avail === "taken" && (
-              <div className="chips">
-                {sugg.map((s) => (
-                  <button type="button" key={s} className="chip" onClick={() => setUsername(s)}>
-                    @{s}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="auth-spacer" />
-            <Button type="submit" size="lg" block disabled={!(avail === "available" || avail === "error")}>
-              Next
-            </Button>
-            <p className="auth-switch muted">
-              Have an account? <Link to="/login">Sign in</Link>
-            </p>
-          </form>
         )}
-
-        {step === 1 && (
-          <form
-            className="col auth-step"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (name.trim()) setStep(2);
-            }}
-          >
-            <h2 className="auth-title">What’s your name?</h2>
-            <p className="muted auth-sub">This is how people will see you. You can change it any time.</p>
-            <Input variant="line" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" autoFocus aria-label="Display name" maxLength={48} />
-            <div className="auth-spacer" />
-            <Button type="submit" size="lg" block disabled={!name.trim()}>
-              Next
-            </Button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form
-            className="col auth-step"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (pwOk && pwMatch) void create();
-            }}
-          >
-            <h2 className="auth-title">Secure your account</h2>
-            <p className="muted auth-sub">We use your email only for verification and password recovery. It’s never shown to other people.</p>
-            <Input
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              autoCapitalize="none"
-              spellCheck={false}
-              error={email && !emailOk ? "Enter a valid email address" : undefined}
-            />
-            <Input
-              label="Password"
-              type={show ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              autoFocus
-              trailing={
-                <button type="button" className="input-eye" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}>
-                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              }
-              hint={password && !pwOk ? "Needs at least 10 characters" : undefined}
-            />
-            <Input label="Confirm password" type={show ? "text" : "password"} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" error={confirm && !pwMatch ? "Passwords don’t match" : error} />
-            <div className="signup-summary">
-              <span className="faint">Creating</span> <strong>{name.trim()}</strong> <span className="faint">as</span> <strong>@{username}</strong>
-            </div>
-            <div className="auth-spacer" />
-            <Button type="submit" size="lg" block loading={busy} disabled={!emailOk || !pwOk || !pwMatch}>
-              Create account
-            </Button>
-          </form>
-        )}
-      </div>
-    </AuthLayout>
+      </ObScreen>
+    </form>
   );
+}
+
+/** Sign-up (blueprint p38–44): name → birthday → username. */
+export function Signup() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/signup/birthday")) return <BirthdayStep />;
+  if (pathname.startsWith("/signup/username")) return <UsernameStep />;
+  return <NameStep />;
 }

@@ -10,6 +10,7 @@ import { Toaster, Spinner } from "./ui";
 import { Shell } from "./routes/Shell";
 import { Welcome } from "./routes/auth/Welcome";
 import { Login } from "./routes/auth/Login";
+import { LoginClassic } from "./routes/auth/LoginClassic";
 import { Signup } from "./routes/auth/Signup";
 import { ForgotPassword, ResetPassword } from "./routes/auth/PasswordReset";
 import { VerifyEmail } from "./routes/auth/VerifyEmail";
@@ -106,7 +107,8 @@ export function App() {
         <Routes>
           <Route path="/welcome" element={token ? <Navigate to="/chats" replace /> : <Welcome />} />
           <Route path="/login" element={token ? <Navigate to="/chats" replace /> : <Login />} />
-          <Route path="/signup" element={token ? <Navigate to="/chats" replace /> : <Signup />} />
+          <Route path="/login/classic" element={token ? <Navigate to="/chats" replace /> : <LoginClassic />} />
+          <Route path="/signup/*" element={token ? <Navigate to="/chats" replace /> : <Signup />} />
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/reset" element={<ResetPassword />} />
           <Route path="/verify" element={<VerifyEmail />} />

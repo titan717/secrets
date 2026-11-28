@@ -1,31 +1,35 @@
-import { Link } from "react-router-dom";
-import { Ghost, Wordmark } from "../../ui";
-import { AuthLayout } from "./AuthLayout";
+import { Link, useNavigate } from "react-router-dom";
+import { GoogleG, ObScreen } from "./ob";
+import { useGoogleSignIn } from "./useGoogle";
 
+/** Welcome (blueprint p46): mark, headline, Continue with Google, Create account, Log in, terms. */
 export function Welcome() {
+  const nav = useNavigate();
+  const g = useGoogleSignIn();
   return (
-    <AuthLayout>
-      <div className="auth-card welcome-card">
-        <div className="auth-mobile-brand">
-          <Wordmark size={28} />
-        </div>
-        <Ghost size={168} float className="welcome-ghost" />
-        <div className="welcome-copy">
-          <h2>
-            Say it in <span className="grad-text">Secrets</span>.
-          </h2>
-          <p className="muted">Chats, calls and docks for the people who matter. Pick a username and you’re in — no phone number needed.</p>
-        </div>
-        <div className="welcome-actions">
-          <Link to="/signup" className="btn btn-primary btn-lg btn-block">
+    <ObScreen
+      label="Welcome to Secrets"
+      className="ob-welcome"
+      foot={
+        <>
+          <button type="button" className="ob-google" onClick={g.start}>
+            <GoogleG /> Continue with Google
+          </button>
+          <button type="button" className="ob-pill" onClick={() => nav("/signup")}>
             Create account
-          </Link>
-          <Link to="/login" className="btn btn-outline btn-lg btn-block">
-            I already have an account
-          </Link>
-        </div>
-        <p className="auth-fine faint">Secure. Private. Together.</p>
-      </div>
-    </AuthLayout>
+          </button>
+          <p className="ob-have">
+            Have an account already? <Link to="/login">Log in</Link>
+          </p>
+          <p className="ob-fine">
+            By continuing, you agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>.
+          </p>
+        </>
+      }
+    >
+      <img className="ob-welcome-mark" src="/logo-mark.png" alt="Secrets" />
+      <h1>The chat app that thinks with you.</h1>
+      {g.chooser}
+    </ObScreen>
   );
 }

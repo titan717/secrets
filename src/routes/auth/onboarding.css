@@ -1,0 +1,110 @@
+/* Onboarding, welcome and sign-in — blueprint p38–47 (dp @360). */
+.ob { min-height: 100dvh; background: var(--bp-bg, #000); color: var(--bp-text, #fff); display: flex; justify-content: center; }
+.ob-col { width: 100%; max-width: 440px; min-height: 100dvh; display: flex; flex-direction: column; padding: 2px 24px calc(20px + env(safe-area-inset-bottom)); }
+.ob-back { width: 40px; height: 40px; margin: 0 0 0 -10px; display: grid; place-items: center; border-radius: 999px; color: inherit; }
+.ob-back svg { width: 22px; height: 22px; }
+.ob-body { flex: 1; display: flex; flex-direction: column; }
+.ob-foot { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; }
+.ob :focus-visible { outline: 2px solid #8f7bff; outline-offset: 3px; }
+
+.ob-title { font-size: 29px; font-weight: 700; line-height: 1.26; margin: 18px 0 0; letter-spacing: -0.005em; }
+.ob-sub { font-size: 16px; line-height: 1.44; color: var(--bp-text-2, #c8c8c8); margin: 8px 0 0; }
+:root[data-theme="dark"] .ob-sub, :root[data-theme="black"] .ob-sub { color: #d6d6d6; }
+
+/* Underlined input (p38–40). */
+.ob-line { display: flex; align-items: baseline; gap: 8px; margin-top: 34px; border-bottom: 1.5px solid var(--bp-text-2, #bdbdbd); padding-bottom: 6px; }
+.ob-line:focus-within { border-bottom-color: var(--bp-text, #fff); }
+.ob-line span { font-size: 21px; }
+.ob-line input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: inherit; font-size: 21px; padding: 0; caret-color: currentColor; }
+.ob-line input::placeholder { color: var(--bp-text-2, #c8c8c8); opacity: 1; }
+.ob-line input:focus-visible { outline: none; }
+.ob-hint { font-size: 12px; color: var(--bp-text-2, #b5b5b5); margin: 10px 0 0; min-height: 16px; }
+.ob-hint.bad { color: #ff6b6b; }
+.ob-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+.ob-chips button { font-size: 14px; font-weight: 600; padding: 8px 13px; border-radius: 10px; color: inherit; background: transparent; }
+.ob-chips button:hover { background: var(--bp-card, #15161b); }
+
+/* Pills. */
+.ob-pill { width: 100%; height: 54px; border-radius: 999px; background: var(--bp-pill, #fff); color: var(--bp-on-pill, #000); font-size: 16px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ob-pill:disabled { opacity: 0.55; }
+.ob-pill.busy { opacity: 0.75; }
+.ob-google { height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 700; color: inherit; border-radius: 999px; }
+.ob-fine { font-size: 12.5px; color: var(--bp-text-2, #b5b5b5); text-align: center; line-height: 1.55; margin: 0; }
+.ob-fine a, .ob-fine strong { color: var(--bp-text, #fff); font-weight: 700; }
+.ob-have { font-size: 14px; color: var(--bp-text-2, #c8c8c8); text-align: center; margin: 0; }
+.ob-have a { color: var(--bp-text, #fff); font-weight: 700; }
+
+/* Birthday field (p41, p44). */
+.ob-label { font-size: 13px; font-weight: 600; margin: 36px 0 0; }
+.ob-date { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 14px 10px 14px 17px; border-radius: 10px; color: inherit; font-size: 16px; text-align: left; }
+.ob-date:hover { background: var(--bp-card, #15161b); }
+.ob-date > svg:first-child { width: 20px; height: 20px; flex: none; }
+.ob-date > span { flex: 1; }
+.ob-date > svg:last-child { width: 18px; height: 18px; }
+.ob-note { font-size: 11px; color: var(--bp-text-2, #b5b5b5); margin: 6px 0 0; }
+.ob-note.bad { color: #ff6b6b; }
+
+/* Welcome (p46). */
+.ob-welcome .ob-body { justify-content: center; }
+.ob-welcome-mark { width: 42px; height: 42px; margin-left: 4px; }
+.ob-welcome h1 { font-size: 32px; font-weight: 700; line-height: 1.24; margin: 34px 0 0; max-width: 320px; }
+
+/* Join or sign in (p47). */
+.ob-brand { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 20px; font-weight: 700; }
+.ob-brand img { width: 24px; height: 24px; }
+.ob-login .ob-title { font-size: 30px; margin-top: 46px; }
+.ob-dim { font-size: 15px; color: var(--bp-text-3, #575757); margin: 14px 0 0; line-height: 1.5; }
+.ob-or { text-align: center; font-size: 14px; color: var(--bp-text-3, #575757); margin: 22px 0; }
+.ob-box { display: block; border: 1px solid var(--bp-text-2, #cfcfcf); border-radius: 10px; padding: 9px 14px 8px; }
+.ob-box:focus-within { border-color: var(--bp-text, #fff); }
+.ob-box span { display: block; font-size: 12px; font-weight: 500; }
+.ob-box input { width: 100%; background: none; border: 0; outline: none; color: inherit; font-size: 16px; padding: 4px 0 2px; }
+.ob-box input:focus-visible { outline: none; }
+.ob-err { color: #ff6b6b; font-size: 12.5px; margin: 8px 0 0; }
+.ob-legal { font-size: 12.5px; line-height: 1.5; margin: 18px 0 0; }
+.ob-legal a, .ob-old { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.ob-old { display: inline-block; font-size: 14px; margin-top: 28px; }
+.ob-login .ob-pill { margin-top: 18px; height: 50px; }
+
+/* Google account chooser (p45). */
+.ob-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, 0.55); display: grid; place-items: center; padding: 20px; animation: ob-fade 0.18s ease; }
+.ob-scrim.light { background: rgba(0, 0, 0, 0.12); }
+.ob-gsheet { width: 100%; max-width: 312px; background: #4a4c50; color: #fff; border-radius: 12px; padding: 18px 0 10px; text-align: center; animation: ob-pop 0.2s ease; }
+.ob-g-logo { width: 36px; height: 36px; border-radius: 9px; background: #fff; display: grid; place-items: center; margin: 0 auto; }
+.ob-g-logo img { width: 28px; height: 28px; }
+.ob-gsheet h2 { font-size: 19px; font-weight: 500; margin: 12px 0 0; }
+.ob-gsheet p { font-size: 14px; color: #d0d0d0; margin: 4px 0 16px; }
+.ob-gsheet ul { list-style: none; margin: 0; padding: 0; text-align: left; }
+.ob-gsheet li button { width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; padding: 10px 20px; color: inherit; font-size: 14px; font-weight: 500; }
+.ob-gsheet li button:hover { background: rgba(255, 255, 255, 0.06); }
+.ob-gsheet strong { display: block; font-size: 13.5px; font-weight: 600; }
+.ob-gsheet small { display: block; font-size: 11.5px; color: #dcdcdc; }
+.ob-g-add { width: 28px; display: grid; place-items: center; }
+.ob-g-add svg { width: 18px; height: 18px; }
+
+/* Date picker (p42–43). */
+.ob-dp { width: 100%; max-width: 320px; overflow: hidden; border-radius: 2px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); animation: ob-pop 0.2s ease; }
+.ob-dp-head { background: #fff; color: #3c3787; height: 93px; padding: 0 22px; display: flex; align-items: center; }
+.ob-dp-date { font-size: 31px; font-weight: 500; }
+.ob-dp-body { background: #3c3787; color: #fff; padding: 14px 10px 12px; }
+.ob-dp-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 14px; }
+.ob-dp-nav button { width: 32px; height: 32px; display: grid; place-items: center; color: #fff; border-radius: 999px; }
+.ob-dp-nav button:disabled { opacity: 0.35; }
+.ob-dp-nav svg { width: 20px; height: 20px; }
+.ob-dp-nav .ob-dp-month { width: auto; padding: 0 10px; font-size: 13.5px; font-weight: 600; }
+.ob-cal { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; margin-top: 14px; justify-items: center; }
+.ob-wd { font-size: 11.5px; height: 32px; display: grid; place-items: center; }
+.ob-day { width: 36px; height: 36px; border-radius: 999px; font-size: 12.5px; color: #fff; display: grid; place-items: center; }
+.ob-day:hover { background: rgba(255, 255, 255, 0.12); }
+.ob-day.is-on { background: #fff; color: #3c3787; font-weight: 600; }
+.ob-day:disabled { opacity: 0.35; }
+.ob-years { height: 256px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; scrollbar-width: thin; }
+.ob-year { height: 40px; border-radius: 999px; color: #fff; font-size: 14px; }
+.ob-year.is-on { background: #fff; color: #3c3787; font-weight: 700; }
+.ob-dp-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 24px; }
+.ob-dp-actions button { color: #fff; font-size: 13.5px; font-weight: 500; letter-spacing: 0.02em; padding: 10px 12px; border-radius: 4px; }
+.ob-dp-actions button:hover { background: rgba(255, 255, 255, 0.1); }
+
+@keyframes ob-fade { from { opacity: 0; } }
+@keyframes ob-pop { from { opacity: 0; transform: scale(0.96); } }
+@media (prefers-reduced-motion: reduce) { .ob-scrim, .ob-gsheet, .ob-dp { animation: none; } }

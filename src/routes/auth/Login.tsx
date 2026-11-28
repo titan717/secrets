@@ -1,32 +1,39 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, AtSign } from "lucide-react";
+import { X } from "lucide-react";
 import { api, errorMessage } from "../../lib/api";
 import { useSession } from "../../stores/session";
-import { Button, IconButton, Input } from "../../ui";
-import { AuthLayout } from "./AuthLayout";
+import { GoogleG } from "./ob";
+import { useGoogleSignIn } from "./useGoogle";
+import "./onboarding.css";
 
+/** Join or sign in (blueprint p47): Google, or email/username then password. */
 export function Login() {
   const nav = useNavigate();
   const loc = useLocation();
   const setSession = useSession((s) => s.setSession);
-  const [username, setUsername] = useState("");
+  const g = useGoogleSignIn();
+  const [id, setId] = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
+  const [step, setStep] = useState<"id" | "password">("id");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password) return;
-    setBusy(true);
     setError(null);
+    const ident = id.trim().toLowerCase().replace(/^@/, "");
+    if (step === "id") {
+      if (!ident) return setError("Enter your email or username.");
+      return setStep("password");
+    }
+    if (!password) return setError("Enter your password.");
+    setBusy(true);
     try {
-      const id = username.trim();
-      const s = await api("POST /v1/auth/login", { body: id.includes("@") ? { username: id.toLowerCase(), password } : { username: id.toLowerCase().replace(/^@/, ""), password } });
+      const s = await api("POST /v1/auth/login", { body: { username: ident, password } });
       setSession(s);
       const from = (loc.state as { from?: string } | null)?.from;
-      nav(from && from !== "/welcome" ? from : "/chats", { replace: true });
+      nav(from && !/^\/(welcome|login|signup)/.test(from) ? from : "/chats", { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -35,42 +42,60 @@ export function Login() {
   };
 
   return (
-    <AuthLayout>
-      <form className="auth-card auth-form" onSubmit={submit}>
-        <div className="auth-top">
-          <IconButton label="Back" onClick={() => nav("/welcome")} type="button">
-            <ArrowLeft size={20} />
-          </IconButton>
+    <main className="ob ob-login" aria-label="Join or sign in">
+      <form className="ob-col" onSubmit={submit} noValidate>
+        <button type="button" className="ob-back" aria-label="Close" onClick={() => (step === "password" ? (setStep("id"), setPassword(""), setError(null)) : nav("/welcome"))}>
+          <X />
+        </button>
+        <div className="ob-brand">
+          <img src="/logo-mark.png" alt="" /> Secrets
         </div>
-        <h2 className="auth-title">Welcome back</h2>
-        <p className="muted auth-sub">Sign in with your username or email.</p>
-        <Input label="Username or email" leading={<AtSign size={16} />} autoComplete="username" autoCapitalize="none" spellCheck={false} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="yourname" autoFocus />
-        <Input
-          label="Password"
-          type={show ? "text" : "password"}
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          trailing={
-            <button type="button" className="input-eye" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}>
-              {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        <h1 className="ob-title">{step === "id" ? "Join or sign in" : "Enter your password"}</h1>
+        <p className="ob-dim">{step === "id" ? "One account for chats, docks, Grace and more." : `Signing in as ${id.trim()}.`}</p>
+        {step === "id" && (
+          <>
+            <button type="button" className="ob-google" style={{ marginTop: 30 }} onClick={g.start}>
+              <GoogleG /> Continue with Google
             </button>
-          }
-          error={error}
-        />
-        <div className="row" style={{ justifyContent: "flex-end" }}>
-          <Link className="faint" to="/forgot">
+            <p className="ob-or">or</p>
+            <label className="ob-box">
+              <span>Email or username</span>
+              <input name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} value={id} onChange={(e) => setId(e.target.value)} aria-invalid={!!error} autoFocus />
+            </label>
+          </>
+        )}
+        {step === "password" && (
+          <label className="ob-box" style={{ marginTop: 30 }}>
+            <span>Password</span>
+            <input name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!error} autoFocus />
+          </label>
+        )}
+        {error && (
+          <p className="ob-err" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className={`ob-pill ${busy ? "busy" : ""}`} disabled={busy}>
+          Continue
+        </button>
+        {step === "password" ? (
+          <Link className="ob-old" to="/forgot">
             Forgot password?
           </Link>
-        </div>
-        <Button type="submit" size="lg" block loading={busy} disabled={!username.trim() || !password}>
-          Sign in
-        </Button>
-        <p className="auth-switch muted">
-          New here? <Link to="/signup">Create an account</Link>
-        </p>
+        ) : (
+          <>
+            <p className="ob-legal">
+              By continuing, you agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a>.
+            </p>
+            <div>
+              <Link className="ob-old" to="/login/classic">
+                Use the old sign-in page
+              </Link>
+            </div>
+          </>
+        )}
       </form>
-    </AuthLayout>
+      {g.chooser}
+    </main>
   );
 }

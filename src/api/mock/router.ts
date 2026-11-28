@@ -79,13 +79,15 @@ export async function mockRequest(method: string, path: string, opts: Opts = {})
     const db = getDB();
 
     if (m === "POST" && action === "signup") {
-      const b = bodyOf<{ username?: string; email?: string; password?: string; display_name?: string }>(opts);
+      const b = bodyOf<{ username?: string; email?: string; password?: string; display_name?: string; birthday?: string }>(opts);
       const username = (b.username ?? "").trim().toLowerCase();
       const email = (b.email ?? "").trim().toLowerCase();
       if (!/^[a-z0-9_.]{3,24}$/.test(username)) throw bad("Use 3–24 letters, numbers, dots or underscores.");
       if (db.users.some((u) => u.username.toLowerCase() === username)) throw new HttpError(409, "username_taken", "That username is taken.");
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw bad("Enter a valid email address.");
-      if ((b.password ?? "").length < 10) throw bad("Use at least 10 characters for your password.");
+      // Onboarding (blueprint p38–44) signs up with name, birthday and username only; email/password are optional.
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw bad("Enter a valid email address.");
+      if (b.password && b.password.length < 10) throw bad("Use at least 10 characters for your password.");
+      if (b.birthday && !/^\d{4}-\d{2}-\d{2}$/.test(b.birthday)) throw bad("Enter your date of birth.");
       const user: User = {
         id: uuid(),
         username,
@@ -95,8 +97,8 @@ export async function mockRequest(method: string, path: string, opts: Opts = {})
         accent: null,
         status: null,
         profile_visibility: "public",
-        email,
-        email_verified: false,
+        email: email || null,
+        email_verified: !email,
         created_at: new Date().toISOString(),
       };
       db.users.push(user);
@@ -116,6 +118,17 @@ export async function mockRequest(method: string, path: string, opts: Opts = {})
       if (stored && b.password !== stored && b.password !== DEMO_PASSWORD) {
         throw new HttpError(401, "invalid_credentials", "That username and password don’t match.");
       }
+      db.session = true;
+      db.me = user.id;
+      saveDB();
+      return { token: "mock-session", user, device_id: "d_demo" } satisfies Session;
+    }
+
+    // "Continue with Google" (blueprint p45) — demo account chooser signs in by email.
+    if (m === "POST" && action === "google") {
+      const b = bodyOf<{ email?: string }>(opts);
+      const user = userByUsername(b.email ?? "");
+      if (!user) throw new HttpError(404, "no_account", "No Secrets account uses that Google account yet.");
       db.session = true;
       db.me = user.id;
       saveDB();

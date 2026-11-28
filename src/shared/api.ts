@@ -6,7 +6,8 @@ import type { Conversation, Dock, DockMember, DockRole, DockVisibility, MessageV
 import type { MessageEnvelope, Attachment } from "./envelope";
 
 export interface Routes {
-  "POST /v1/auth/signup": { body: { username: string; email: string; password: string; display_name?: string }; res: Session };
+  "POST /v1/auth/signup": { body: { username: string; email?: string; password?: string; display_name?: string; birthday?: string }; res: Session };
+  "POST /v1/auth/google": { body: { email: string }; res: Session };
   "POST /v1/auth/login": { body: { username: string; password: string }; res: Session };
   "POST /v1/auth/logout": { body: {}; res: { ok: true } };
   "GET /v1/auth/session": { res: { user: User; device_id: string; token: string } };
