@@ -1,4 +1,4 @@
-/** Contracts for Moments, Notes, Tasks, Vault (see apps/api/README.md for routes). */
+/** Contracts for Moments, Notes, Tasks, Vault (served by the mock API in src/api/mock). */
 import type { ID, User } from "./types";
 import type { Attachment } from "./envelope";
 

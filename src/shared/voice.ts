@@ -1,5 +1,5 @@
 /**
- * Contract between apps/web and voice.secretsapi (LiveKit).
+ * Contract between this client and voice.secretsapi (LiveKit).
  * POST {VOICE_URL}/v1/rooms   header Authorization: Bearer <secrets session token>
  *   body { conversation_id, kind: "voice" | "video" } -> VoiceRoom
  * POST {VOICE_URL}/v1/token   body { room, identity?, name? } -> { token, url, room }

@@ -4,53 +4,61 @@
 
 **Your world. Your people. Your space.**
 
-Privacy-first, all-in-one communication platform. MVP pillars: **Messaging, Docks, Calls, AI** —
-dark-first, username-first, free-first, for desktop and mobile web.
+The Secrets web client: chats, Docks, calls, stories and the Grace assistant, dark-first, for mobile
+and desktop. This repository is **frontend only**. It runs against a built-in mock API, so there is
+no server, database or account to set up.
 
-> Status: Phases 0–2 complete (consolidation, tests, CI, flags, auth hardening). Phase 3 next: messaging.
-> See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+## Stack
 
-This repository is the consolidated monorepo. It absorbs the split prototype repos
-(`api.secrets`, `ai.secrets`, `voice.secretsapi`, `docs.secrets`).
+React 18, Vite, Tailwind, Zustand, React Router. Tests use Vitest and Testing Library; linting uses
+ESLint (flat config). Shared wire types are imported through the `@shared` alias.
 
-## Repo layout
+## Run it
+
+```bash
+pnpm install
+pnpm dev          # http://localhost:5173, mock API on by default
+```
+
+Sign in with the demo account **ava / secrets123**, or tap "Continue with Google" and pick a demo
+account, or create a new account from the Welcome screen. Mock data lives in `localStorage`; clear
+site data to start fresh.
+
+To point at a real API later, copy `.env.example` to `.env.local` and set `VITE_USE_MOCKS=false` plus the service URLs.
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Dev server with hot reload |
+| `pnpm build` | Typecheck and production build to `dist/` |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm lint` | ESLint over `src/` |
+| `pnpm test` | Vitest (jsdom) |
+| `pnpm check` | Typecheck, lint, test and build |
+
+## Layout
 
 | Path | What |
 |---|---|
-| `apps/web` | Web client (React 18 + Vite, `packages/ui` design system) |
-| `apps/api` | Core API: auth, users, conversations, messages, Docks, attachments, realtime |
-| `apps/ai` | AI assistant: Gemini/OpenRouter adapters, SSE streaming, agent loop, tool approvals |
-| `apps/calls` | LiveKit token issuance and call coordination |
-| `packages/shared` | Wire contracts: REST DTOs, WS frames, AI SSE, calls, message envelope |
-| `packages/ui` | Shared UI kit |
-| `packages/tokens` | Design tokens (dark, black, light, system), contrast-tested |
-| `packages/config` | Shared TypeScript / lint / build presets |
-| `docs/product` | Scope and roadmap |
-| `docs/engineering` | Audit, architecture, data model, API contract, schema |
-| `docs/security` | Threat model and security plan |
-| `docs/adr` | Architecture decision records |
+| `src/routes` | Screens: auth/onboarding, chats, docks, calls, ai (Grace), profile, settings, What's new, workspace (notes, tasks, vault, moments) |
+| `src/ui` | UI kit (buttons, inputs, sheets, coachmarks, blueprint primitives in `bp.tsx`) |
+| `src/styles` | Design tokens (`tokens.css`, `bp.css`) for System, Light, Dark and Black themes |
+| `src/stores` | Zustand stores (session, settings, chat, ui, toast) |
+| `src/api/mock` | Mock API: router, seeded database, features (stories, notes, tasks, vault) |
+| `src/shared` | Wire contracts (REST, realtime, AI, voice) |
+| `src/lib` | API client, theme, flags, helpers |
+| `assets`, `public` | Logo, mascot and overview mockup, used as-is |
+| `docs` | Blueprint checklist and notes |
 
-## Develop
+## Design source
 
-```bash
-pnpm install --allow-build=esbuild
-pnpm dev        # api :8080 (embedded PGlite) + web :5173
-pnpm check      # typecheck + lint + test + build
-```
+Every screen follows the Secrets blueprint. [docs/BLUEPRINT-CHECKLIST.md](docs/BLUEPRINT-CHECKLIST.md)
+maps each blueprint page to its route and component, and
+[docs/BLUEPRINT-NOTES.md](docs/BLUEPRINT-NOTES.md) records every assumption where the blueprint is
+silent.
 
-Local development needs **no Postgres and no Redis**: the API boots embedded Postgres (PGlite) and an
-in-process event bus. Production sets `DATABASE_URL` / `REDIS_URL` and uses object storage.
+## Security
 
-## Security model (short)
-
-MVP is **not** end-to-end encrypted and does not claim to be. Transport is TLS; every request is
-authorized server-side; sessions live in httpOnly cookies; provider keys are bring-your-own and never
-stored on the server. The message envelope (`body` / `ciphertext` + `nonce`) already isolates content so
-E2EE can be added later without an API break. See [docs/security/SECURITY-PLAN.md](docs/security/SECURITY-PLAN.md).
-
-## Documentation
-
-- [Audit](docs/engineering/AUDIT.md) · [Architecture](docs/engineering/ARCHITECTURE.md) ·
-  [Data model](docs/engineering/DATA-MODEL.md) · [API contract](docs/engineering/API-CONTRACT.md)
-- [Security plan](docs/security/SECURITY-PLAN.md) · [Roadmap](docs/product/ROADMAP.md)
-- [Status](IMPLEMENTATION_STATUS.md)
+See [SECURITY.md](SECURITY.md). The mock API is for development and demos only; it stores data in the
+browser and does no real authentication.

@@ -1,5 +1,5 @@
 /**
- * REST contract for apps/api. Base path /v1. Auth: `Authorization: Bearer <token>`.
+ * REST contract for the core API (mocked in src/api/mock). Base path /v1. Auth: `Authorization: Bearer <token>`.
  * All bodies JSON unless noted. Errors: { error, message } with 4xx/5xx.
  */
 import type { Conversation, Dock, DockMember, DockRole, DockVisibility, MessageView, Session, User, Channel } from "./types";

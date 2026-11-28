@@ -1,5 +1,5 @@
 /**
- * Contract between apps/web and the ai.secrets service.
+ * Contract between this client and the ai.secrets service (mocked in src/api/mock).
  * Keys (provider + GitHub) live in browser storage only and are sent per request
  * in headers; the service never logs or stores them.
  *
@@ -12,7 +12,7 @@
  * GET  {AI_URL}/v1/models?provider=gemini|openrouter  (header x-provider-key) -> { models: {id,name}[] }
  *
  * Secrets tools (read_conversation, summarize_dock_channel, draft_message) are executed by
- * the AI service calling apps/api with the user's session token from header x-secrets-token.
+ * the AI service calling the core API with the user's session token from header x-secrets-token.
  */
 export type AiProvider = "gemini" | "openrouter" | "mock"; // mock = keyless demo provider
 /** Five presets plus custom. instant = no reasoning, max 2 steps, prefers a fast model. */

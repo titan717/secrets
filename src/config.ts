@@ -1,7 +1,8 @@
 const trim = (s: string) => s.replace(/\/+$/, "");
 
 /** Standalone demo mode: in-memory REST + WebSocket, no backend needed. */
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
+// Frontend-only repo: the mock API is on unless explicitly turned off.
+export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== "false";
 
 /** Base URL of api.secrets. Empty string = same origin. */
 export const API_URL = trim(import.meta.env.VITE_API_URL ?? "");
