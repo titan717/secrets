@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Eye, EyeOff, Github, KeyRound, RefreshCw, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
+import { Bookmark, Bot, Cloud, Eye, EyeOff, Github, KeyRound, RefreshCw, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
 import type { AiProvider, EffortLevel } from "@shared";
-import { EFFORT_STEPS } from "@shared";
+import { EFFORT_LEVELS, EFFORT_META, effortSummary } from "../../lib/ai/effort";
 import { Input, ListGroup, ListItem, Modal, Spinner, Tabs, Toggle } from "../../ui";
 import { DEFAULT_MODELS, PROVIDER_LABEL, useAiSettings } from "../../lib/ai/settings";
 import { fetchModels, type ModelOption } from "../../lib/ai/client";
@@ -96,14 +96,9 @@ function ModelPicker() {
   );
 }
 
-export function AiSettingsBody() {
+export function AiSettingsBody({ onProviders }: { onProviders?: () => void }) {
   const s = useAiSettings();
-  const effortItems: { id: EffortLevel; label: string }[] = [
-    { id: "low", label: "Low" },
-    { id: "medium", label: "Medium" },
-    { id: "high", label: "High" },
-    { id: "custom", label: "Custom" },
-  ];
+  const effortItems: { id: EffortLevel; label: string }[] = [...EFFORT_LEVELS.map((id) => ({ id, label: EFFORT_META[id].label })), { id: "custom", label: "Custom" }];
   return (
     <div className="ai-settings col">
       <section className="col">
@@ -156,7 +151,7 @@ export function AiSettingsBody() {
         <h3 className="ai-h">Effort</h3>
         <Tabs<EffortLevel> variant="pill" items={effortItems} value={s.effort} onChange={(effort) => s.set({ effort })} />
         {s.effort !== "custom" ? (
-          <p className="faint ai-small">Up to {EFFORT_STEPS[s.effort]} agent steps, {s.effort} thinking.</p>
+          <p className="faint ai-small">{effortSummary(s.effort, { maxSteps: s.customSteps, thinkingBudget: s.thinkingBudget })}</p>
         ) : (
           <div className="ai-grid2">
             <Input label="Max steps" type="number" min={1} max={50} value={s.customSteps} onChange={(e) => s.set({ customSteps: clamp(+e.target.value, 1, 50) })} />
@@ -190,6 +185,18 @@ export function AiSettingsBody() {
         />
       )}
 
+      <ListGroup title="Memory & sync" footer="Bridge sync mirrors projects, usage, memory, connections, shares and upcoming tasks to the ai.secrets v2 endpoints. Everything works locally without it.">
+        <ListItem icon={<Bookmark size={18} />} title="Use memory" subtitle="Recall facts you approved" trailing={<Toggle label="Use memory" checked={s.memoryEnabled} onChange={(memoryEnabled) => s.set({ memoryEnabled })} />} />
+        <ListItem icon={<Cloud size={18} />} title="Bridge sync" subtitle={s.bridgeToken ? "Use the ai.secrets bridge" : "Add a bridge token below"} trailing={<Toggle label="Bridge sync" checked={s.bridgeSync} onChange={(bridgeSync) => s.set({ bridgeSync })} />} />
+      </ListGroup>
+      {s.bridgeSync && <SecretInput label="Bridge token" value={s.bridgeToken} onChange={(bridgeToken) => s.set({ bridgeToken })} placeholder="From ai.secrets pairing" hint="Printed by the bridge when you pair this device." />}
+
+      {onProviders && (
+        <button type="button" className="g-link" onClick={onProviders}>
+          Browse all providers →
+        </button>
+      )}
+
       <p className="faint ai-small row ai-privacy">
         <ShieldCheck size={14} /> Keys are sent only as request headers to {AI_URL.replace(/^https?:\/\//, "")}, never stored server-side.
       </p>
@@ -201,10 +208,10 @@ function clamp(n: number, lo: number, hi: number) {
   return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : lo;
 }
 
-export function AiSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AiSettingsModal({ open, onClose, onProviders }: { open: boolean; onClose: () => void; onProviders?: () => void }) {
   return (
     <Modal open={open} onClose={onClose} title="AI settings" kind="side" className="ai-settings-modal">
-      <AiSettingsBody />
+      <AiSettingsBody onProviders={onProviders} />
     </Modal>
   );
 }

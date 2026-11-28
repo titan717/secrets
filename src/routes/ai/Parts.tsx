@@ -5,30 +5,11 @@ import { Markdown } from "../../lib/ai/markdown";
 import type { AssistantItem, AssistantPart } from "../../lib/ai/chats";
 import { answerConfirm } from "../../lib/ai/runner";
 import { toast } from "../../stores/toast";
+import { toolLabel } from "../../lib/ai/tools";
 
 type ToolPart = Extract<AssistantPart, { type: "tool" }>;
 
-const TOOL_LABEL: Record<string, string> = {
-  read_conversation: "Read conversation",
-  summarize_dock_channel: "Summarize channel",
-  draft_message: "Draft message",
-  list_repos: "List repos",
-  search_code: "Search code",
-  read_file: "Read file",
-  list_issues: "List issues",
-  open_issue: "Open issue",
-  create_branch: "Create branch",
-  commit_file: "Commit file",
-  open_pr: "Open pull request",
-  demo_search: "Demo search",
-  demo_create_note: "Create note",
-};
-
-export function toolLabel(name: string) {
-  if (TOOL_LABEL[name]) return TOOL_LABEL[name];
-  const n = name.replace(/^github_/, "GitHub · ").replace(/_/g, " ");
-  return n.charAt(0).toUpperCase() + n.slice(1);
-}
+export { toolLabel };
 
 function pretty(v: unknown): string {
   if (v === undefined) return "";

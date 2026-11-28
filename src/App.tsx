@@ -124,8 +124,7 @@ export function App() {
             <Route path="/docks" element={flags.docks ? <DocksPage /> : <Navigate to="/chats" replace />} />
             <Route path="/docks/:id" element={flags.docks ? <DocksPage /> : <Navigate to="/chats" replace />} />
             <Route path="/docks/:id/:channelId" element={flags.docks ? <DocksPage /> : <Navigate to="/chats" replace />} />
-            <Route path="/ai" element={flags.ai ? <AiPage /> : <Navigate to="/chats" replace />} />
-            <Route path="/ai/:chatId" element={flags.ai ? <AiPage /> : <Navigate to="/chats" replace />} />
+            <Route path="/ai/*" element={flags.ai ? <AiPage /> : <Navigate to="/chats" replace />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings/*" element={<SettingsPage />} />
             <Route path="/moments" element={flags.experimental ? <MomentsPage /> : <Navigate to="/home" replace />} />

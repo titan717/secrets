@@ -210,6 +210,7 @@ export function Shell() {
   const aiOpen = useUi((s) => s.aiOpen);
   const setAiOpen = useUi((s) => s.setAiOpen);
   const nav = useNavigate();
+  const loc = useLocation();
   return (
     <div className="shell">
       <Sidebar />
@@ -230,6 +231,7 @@ export function Shell() {
       </Modal>
       <NewChatModal mode={newChat} onClose={() => setNewChat(null)} />
       <AiDrawer open={aiOpen} onClose={() => setAiOpen(false)} />
+      {!loc.pathname.startsWith("/ai") && (
       <CoachTour
         id="shell-v1"
         steps={[
@@ -239,6 +241,7 @@ export function Shell() {
           { target: "nav-ai", title: "Meet the ghost", body: "Ask your AI assistant anything. Your API keys never leave this device." },
         ]}
       />
+      )}
     </div>
   );
 }

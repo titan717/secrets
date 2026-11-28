@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, List, Maximize2, X } from "lucide-react";
 import { IconButton } from "../../ui";
 import { useAiChats } from "../../lib/ai/chats";
-import { AiThread } from "./AiThread";
+import { AiThread, MASCOT } from "./AiThread";
+import { ASSISTANT_NAME } from "../../lib/ai/settings";
 import { AiChatList } from "./AiChatList";
 import { AiSettingsModal } from "./AiSettings";
 import "../../styles/ai.css";
+import "../../styles/grace.css";
 
 export function AiDrawerPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const nav = useNavigate();
@@ -43,7 +45,7 @@ export function AiDrawerPanel({ open, onClose }: { open: boolean; onClose: () =>
 
   return createPortal(
     <div className="ai-drawer-root" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className="ai-drawer" role="dialog" aria-modal="true" aria-label="Ask Secrets AI">
+      <aside className="ai-drawer" role="dialog" aria-modal="true" aria-label={`Ask ${ASSISTANT_NAME}`}>
         {view === "list" || !id ? (
           <div className="ai-drawer-list">
             <header className="ai-thread-head">
@@ -68,33 +70,29 @@ export function AiDrawerPanel({ open, onClose }: { open: boolean; onClose: () =>
             />
           </div>
         ) : (
-          <AiThread
-            chatId={id}
-            compact
-            onOpenSettings={() => setSettings(true)}
-            leading={
+          <div className="g-drawer-thread">
+            <header className="ai-thread-head g-drawer-head">
               <IconButton label="All AI chats" onClick={() => setView("list")}>
                 <List size={19} />
               </IconButton>
-            }
-            actions={
-              <>
-                <IconButton
-                  label="Open full page"
-                  className="desktop-only"
-                  onClick={() => {
-                    onClose();
-                    nav(`/ai/${id}`);
-                  }}
-                >
-                  <Maximize2 size={17} />
-                </IconButton>
-                <IconButton label="Close" onClick={onClose}>
-                  <X size={18} />
-                </IconButton>
-              </>
-            }
-          />
+              <img src={MASCOT} alt="" width={26} height={26} className="g-drawer-mascot" />
+              <div className="grow ai-thread-title truncate">{chats.find((c) => c.id === id)?.title ?? ASSISTANT_NAME}</div>
+              <IconButton
+                label="Open full page"
+                className="desktop-only"
+                onClick={() => {
+                  onClose();
+                  nav(`/ai/${id}`);
+                }}
+              >
+                <Maximize2 size={17} />
+              </IconButton>
+              <IconButton label="Close" onClick={onClose}>
+                <X size={18} />
+              </IconButton>
+            </header>
+            <AiThread chatId={id} compact onCustomEffort={() => setSettings(true)} />
+          </div>
         )}
       </aside>
       <AiSettingsModal open={settings} onClose={() => setSettings(false)} />
